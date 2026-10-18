@@ -1,6 +1,6 @@
-# CALIBR8 Render + Supabase Dashboard v5.2.1
+# CALIBR8 Render + Supabase Dashboard v5.2.2
 
-This edition includes the sign-in screen fix, professional dark/light interface and measurement display fix. Read `LOGIN_FIX.md` to apply the login patch to an existing deployment. Read `UI_REDESIGN.md` to update an existing deployment. Open `UI_PREVIEW.html` for a self-contained design preview.
+This edition fixes replay startup and source controls, and includes the sign-in fix, dark/light interface and measurement display fix. Read `REPLAY_FIX.md` to update an existing deployment. The earlier changes are described in `LOGIN_FIX.md`, `UI_REDESIGN.md` and `MEASUREMENTS_FIX.md`. Open `UI_PREVIEW.html` for a self-contained design preview.
 
 The dashboard has Live monitoring, Fleet, Safety events and Models & physics views, with remembered Light/Dark/Auto themes and responsive navigation. Measurement cards update directly from API responses, with Realtime updates and authenticated state reads for history and fallback.
 
@@ -23,6 +23,7 @@ The dashboard has Live monitoring, Fleet, Safety events and Models & physics vie
 - New CALIBR8-AI ↔ Friend GBM switch.
 - Balanced and Safety thresholds for New AI.
 - Sample API replay, harsh-event replay, manual harsh-event injection.
+- One-click sample replay without a live fleet connection, visible playback errors and an API-output shortcut.
 - Direct device/API push endpoints.
 - CSV event export.
 - Encrypted saved API request headers.

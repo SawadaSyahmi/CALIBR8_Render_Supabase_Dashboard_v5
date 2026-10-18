@@ -104,12 +104,13 @@ async function run() {
     return {ok: true, status: 200, async json() { return data; }};
   };
   let source = fs.readFileSync(sourcePath, 'utf8').replace(/^import .*;\r?\n/gm, '');
-  source += '\nwindow.__dashboardTest = {state, sourceTick, refreshDashboardSnapshot, applyLiveRow, applyDashboardPayload, selectFleetVehicle, stop(){unsubscribeVehicle();clearPlaybackTimer();}, get labels(){return labels;}};';
+  source += '\nwindow.__dashboardTest = {state, sourceTick, refreshDashboardSnapshot, applyLiveRow, applyDashboardPayload, selectFleetVehicle, stop(){unsubscribeVehicle();clearPlaybackTimer();}, get labels(){return labels;}, get chart(){return telemetryChart;}};';
   await new vm.Script(`(async()=>{${source}\n})()`, {filename: sourcePath}).runInContext(dom.getInternalVMContext());
   const ui = w.__dashboardTest, get = id => w.document.getElementById(id);
   function sourceChange(value) { get('sourceSelect').value = value;get('sourceSelect').dispatchEvent(new w.Event('change')); }
   assert.equal(get('speed').textContent, '—', 'Missing readings must have a waiting indicator');
   sourceChange('replay');
+  assert.equal(get('startReplayBtn').disabled,false);get('startReplayBtn').click();
   await eventually(() => get('speed').textContent === fixtures.normal.gps.speed_kmh.toFixed(1), 'Replay must update Speed from HTTP without Realtime');
   get('pauseReplayBtn').click();
   assert.notEqual(get('peak').textContent, '—');
@@ -117,7 +118,7 @@ async function run() {
   assert.ok(Number.parseFloat(get('distance').textContent) > 0);
   assert.notEqual(get('newAiMini').textContent, '—');
   assert.notEqual(get('friendMini').textContent, '—');
-  assert.equal(w.telemetryChart.data.datasets[0].data.at(-1), fixtures.normal.gps.speed_kmh);
+  assert.equal(ui.chart.data.datasets[0].data.at(-1), fixtures.normal.gps.speed_kmh);
   assert.ok(ui.state.route.length > 0);
   console.log('PASS replay: speed, braking, physics, both AI scores, distance, route and chart from HTTP');
 
@@ -175,10 +176,10 @@ async function run() {
   assert.equal(w.document.documentElement.dataset.theme,'light');
   assert.equal(w.localStorage.getItem('calibr8-theme'),'light');
   assert.equal(w.document.querySelectorAll('[data-theme-choice="light"][aria-pressed="true"]').length,2);
-  assert.equal(w.telemetryChart.data.datasets[0].borderColor,'#07836f');
+  assert.equal(ui.chart.data.datasets[0].borderColor,'#07836f');
   w.document.querySelector('[data-theme-choice="dark"]').click();
   assert.equal(w.document.documentElement.dataset.theme,'dark');
-  assert.equal(w.telemetryChart.data.datasets[0].borderColor,'#52d8bd');
+  assert.equal(ui.chart.data.datasets[0].borderColor,'#52d8bd');
   w.document.querySelector('[data-theme-choice="system"]').click();
   assert.equal(w.localStorage.getItem('calibr8-theme'),'system');
   console.log('PASS light/dark/system themes, synchronized controls, persistent choice and chart colours');

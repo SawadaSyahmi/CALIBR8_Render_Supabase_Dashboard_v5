@@ -52,12 +52,13 @@ async function setup(options={}){
  if(options.mapThrows)w.L={map(){throw new Error('Map initialization failed');}};
  w.fetch=async(url,opts={})=>{
   const pathname=new URL(url,w.location.href).pathname;requests.push({pathname,opts});
+  if(options.api){const response=await options.api(pathname,opts);if(response!==undefined)return response;}
   if(pathname==='/api/client-config')return {ok:true,json:async()=>({supabase_url:'https://supabase.test',supabase_anon_key:'local-public-test-key'})};
   if(pathname==='/api/connections'&&options.connectionsGate){pendingConnections=options.connectionsGate;await pendingConnections;}
   if(pathname==='/api/connections'&&options.connectionsError)return {ok:false,status:503,json:async()=>({detail:'Data service unavailable'})};
   return {ok:true,status:200,json:async()=>pathname==='/api/connections'?{connections:[]}:pathname==='/api/state'?{vehicle_id:'demo_vehicle',live:{},route_points:[],events:[]}:{vehicles:[]}};
  };
- const program=`(async()=>{${source}\nwindow.__authTest={handleSession,token,stop(){unsubscribeVehicle();clearPlaybackTimer();},get initialized(){return initialized;}};})()`;
+ const program=`(async()=>{${source}\nwindow.__authTest={handleSession,token,sourceTick,stop(){unsubscribeVehicle();clearPlaybackTimer();},get initialized(){return initialized;}};})()`;
  let bootError=null;
  try{await new vm.Script(program,{filename:'app.js'}).runInContext(dom.getInternalVMContext());}catch(e){bootError=e;}
  const get=id=>w.document.getElementById(id);
@@ -104,4 +105,5 @@ async function run(){
  t.get('signOutBtn').click();await until(()=>!t.loggedIn(),'Real Supabase SDK sign-out must close the workspace');await t.close();
  console.log('PASS actual Supabase SDK with mocked Auth HTTP transport');
 }
-run().catch(e=>{console.error(e);process.exit(1);});
+module.exports={setup,until,sessionFor};
+if(require.main===module)run().catch(e=>{console.error(e);process.exit(1);});

@@ -1,6 +1,6 @@
-# Deploy CALIBR8 v5.2.1 — Render + Supabase
+# Deploy CALIBR8 v5.2.2 — Render + Supabase
 
-For the sign-in patch to an existing deployment, follow `LOGIN_FIX.md`. For the full UI update, follow `UI_REDESIGN.md`. For a new deployment, follow the steps below.
+For the latest replay/startup patch to an existing deployment, follow `REPLAY_FIX.md`. The earlier sign-in and UI changes are described in `LOGIN_FIX.md` and `UI_REDESIGN.md`. For a new deployment, follow the steps below.
 
 ## Part A — Create Supabase
 
@@ -95,10 +95,10 @@ Open it and sign in using the Supabase user you created.
 
 ## Part F — Test before real API connection
 
-1. Change data source to **Sample API replay**.
-2. Select Route 1/2/3.
-3. Start replay.
-4. Press **Inject Harsh Event Now**.
+1. Click **Run sample replay** to start Route 1 without a connected fleet API.
+2. Alternatively, choose **Sample API replay**, select Route 1/2/3, then press **Start**.
+3. Click **View API output** to inspect the sample payload in **Models & physics**.
+4. Press **Inject harsh event**.
 5. Switch New CALIBR8-AI ↔ Friend GBM.
 
 Then switch to **Live fleet APIs**, add the real endpoint(s), Test, Refresh fleet, and select a vehicle.

@@ -12,8 +12,10 @@ const state={telemetry:null,gps:null,context:null,inference:null,trip:null,route
 let selectedModel='new_ai', mode='balanced', sourceMode=CALIBR8_CONFIG.defaultSource||'fleet_api', selectedScenario='route_1';
 let selectedVehicleId=CALIBR8_CONFIG.vehicleId||'demo_vehicle', selectedConnectionId='', selectedExternalVehicleId='';
 let map,routeLine,carMarker,routeUnsub,eventUnsub,timer=null,inferenceTimer=null,lastInferenceKey='',tripUnsub=null;
-let liveUnsubs=[];let isPlaying=true,playbackSpeed=5,compressGaps=true,nextTickAt=null,tickInFlight=false,initialized=false;
+let telemetryChart=null;
+let liveUnsubs=[];let isPlaying=false,playbackSpeed=5,compressGaps=true,nextTickAt=null,tickInFlight=false,initialized=false;
 let user=null,session=null;
+let sourceRevision=0;
 let authSignal=0,authRevision=0,workspaceOwnerId=null,workspaceInitTimer=null,workspaceLoad=null,authBusy=false;
 let viewGeneration=0,snapshotTimer=null,snapshotInFlight=false,lastDataAt=0,lastChartKey='';
 const liveVersions=new Map();
@@ -34,22 +36,24 @@ function initMap(){
 function chartPalette(){const css=getComputedStyle(document.documentElement);return {text:css.getPropertyValue('--muted').trim()||'#9aa9bc',grid:css.getPropertyValue('--chart-grid').trim()||'#293444',speed:css.getPropertyValue('--chart-speed').trim()||'#52d8bd',decel:css.getPropertyValue('--chart-decel').trim()||'#f2b76b'};}
 function applyChartTheme(){
   if(!window.Chart)return;const colors=chartPalette();Chart.defaults.color=colors.text;Chart.defaults.borderColor=colors.grid;
-  const chart=window.telemetryChart;if(!chart)return;
+  const chart=telemetryChart;if(!chart)return;
   chart.data.datasets[0].borderColor=colors.speed;chart.data.datasets[1].borderColor=colors.decel;
   for(const axis of Object.values(chart.options.scales)){axis.ticks={...axis.ticks,color:colors.text};axis.title={...axis.title,color:colors.text};axis.grid={...axis.grid,color:colors.grid};}
   chart.options.plugins.legend.labels.color=colors.text;chart.update('none');
 }
 function initChart(){
   if(!window.Chart)return;const colors=chartPalette();Chart.defaults.color=colors.text;Chart.defaults.borderColor=colors.grid;
-  window.telemetryChart=new Chart($('telemetryChart'),{type:'line',data:{labels,datasets:[{label:'Speed (km/h)',data:speeds,borderColor:colors.speed,borderWidth:2,pointRadius:0,pointHitRadius:10,tension:.25,yAxisID:'y'},{label:'Peak decel. (m/s²)',data:decels,borderColor:colors.decel,borderWidth:2,pointRadius:0,pointHitRadius:10,tension:.25,yAxisID:'y1'}]},options:{responsive:true,animation:false,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{position:'top',align:'end',labels:{boxWidth:12,boxHeight:3,padding:17,font:{size:9},color:colors.text}}},scales:{x:{grid:{display:false},ticks:{maxTicksLimit:7,maxRotation:0,font:{size:9},color:colors.text}},y:{beginAtZero:true,border:{display:false},grid:{color:colors.grid},ticks:{maxTicksLimit:5,font:{size:9},color:colors.text},title:{display:true,text:'km/h',font:{size:9},color:colors.text}},y1:{beginAtZero:true,position:'right',border:{display:false},grid:{drawOnChartArea:false},ticks:{maxTicksLimit:5,font:{size:9},color:colors.text},title:{display:true,text:'m/s²',font:{size:9},color:colors.text}}}}});
+  telemetryChart=new Chart($('telemetryChart'),{type:'line',data:{labels,datasets:[{label:'Speed (km/h)',data:speeds,borderColor:colors.speed,borderWidth:2,pointRadius:0,pointHitRadius:10,tension:.25,yAxisID:'y'},{label:'Peak decel. (m/s²)',data:decels,borderColor:colors.decel,borderWidth:2,pointRadius:0,pointHitRadius:10,tension:.25,yAxisID:'y1'}]},options:{responsive:true,animation:false,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{position:'top',align:'end',labels:{boxWidth:12,boxHeight:3,padding:17,font:{size:9},color:colors.text}}},scales:{x:{grid:{display:false},ticks:{maxTicksLimit:7,maxRotation:0,font:{size:9},color:colors.text}},y:{beginAtZero:true,border:{display:false},grid:{color:colors.grid},ticks:{maxTicksLimit:5,font:{size:9},color:colors.text},title:{display:true,text:'km/h',font:{size:9},color:colors.text}},y1:{beginAtZero:true,position:'right',border:{display:false},grid:{drawOnChartArea:false},ticks:{maxTicksLimit:5,font:{size:9},color:colors.text},title:{display:true,text:'m/s²',font:{size:9},color:colors.text}}}}});
 }
 document.addEventListener('calibr8:themechange',applyChartTheme);
-document.addEventListener('calibr8:viewchange',()=>{if(window.CALIBR8_UI?.view==='overview'){setTimeout(()=>{map?.invalidateSize();window.telemetryChart?.resize?.();},0);}});
+document.addEventListener('calibr8:viewchange',()=>{if(window.CALIBR8_UI?.view==='overview'){setTimeout(()=>{map?.invalidateSize();telemetryChart?.resize?.();},0);}});
 function updateWorkspaceSummary(){
   $('activeModelLabel').textContent=selectedModel==='friend_gbm'?'Friend GBM · 4 classes':`CALIBR8-AI · ${mode==='safety'?'Safety':'Balanced'}`;
   document.querySelector('.source-panel').dataset.source=sourceMode;
   const labels={fleet_api:selectedExternalVehicleId?`Monitoring ${selectedExternalVehicleId} · ${state.connections.find(c=>c.connection_id===selectedConnectionId)?.name||'Connected fleet API'}`:'Connect a fleet API, then choose a vehicle to monitor.',replay:'Recorded sample route · not a live vehicle feed',harsh_replay:'Recorded sample with a controlled braking event',demo:'Synthetic demonstration · simulated vehicle readings',external:'Vehicle data from the configured external APIs',push:'Waiting for device / API push updates'};
   $('sourceCaption').textContent=sourceMode==='push'&&state.telemetry?'Receiving device / API push updates':labels[sourceMode]||'Choose a data source to begin.';
+  $('runSampleBtn').classList.toggle('hidden',isReplayMode());
+  if(sourceMode==='fleet_api'&&!selectedExternalVehicleId)$('sourceCaption').textContent='No live vehicle selected. Connect an API or run a sample replay.';
   $('fleetUnavailable').classList.toggle('hidden',sourceMode==='fleet_api');
   document.querySelector('.events-metric')?.classList.toggle('has-events',Number(state.trip?.harsh_events||0)>0);
   document.querySelectorAll('.seg').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.model===selectedModel)));
@@ -60,7 +64,7 @@ function resetVehicleView(){
   state.telemetry=state.gps=state.context=state.inference=state.trip=null;
   state.rawApi=state.replay=state.lastHarshReplay=null;state.route=[];state.events=[];
   lastChartKey=lastInferenceKey='';lastDataAt=0;liveVersions.clear();
-  labels.splice(0);speeds.splice(0);decels.splice(0);window.telemetryChart?.update('none');
+  labels.splice(0);speeds.splice(0);decels.splice(0);telemetryChart?.update('none');
   routeLine?.setLatLngs([]);while(harshMarkers.length)map?.removeLayer(harshMarkers.pop());
   updateGauge(0,false);$('riskPct').textContent='—';$('decisionBadge').textContent='WAITING';
   $('modelName').textContent=selectedModel==='friend_gbm'?'Friend GBM':'CALIBR8-AI';
@@ -82,7 +86,7 @@ function updateChart(){
   labels.push(new Date(t.timestamp_start||Date.now()).toLocaleTimeString([],{minute:'2-digit',second:'2-digit'}));
   speeds.push(Number(t.post_event_speed_kmh??state.gps?.speed_kmh??t.pre_event_speed_kmh??0));
   decels.push(Math.abs(Number(t.peak_deceleration_mps2||0)));
-  if(labels.length>60){labels.shift();speeds.shift();decels.shift();}window.telemetryChart?.update('none');
+  if(labels.length>60){labels.shift();speeds.shift();decels.shift();}telemetryChart?.update('none');
 }
 function renderSourcePayload(){updateWorkspaceSummary();const r=state.replay||{},raw=state.rawApi||{};if(sourceMode==='fleet_api'){$('replayBadge').textContent=selectedConnectionId?'fleet live':'waiting';$('replayDevice').textContent=selectedExternalVehicleId||'—';$('replayPoint').textContent='live';$('replayDelta').textContent='provider';$('replayAccel').textContent=state.telemetry?.mean_deceleration_mps2!=null?`${fmt(state.telemetry.mean_deceleration_mps2,3)} m/s²`:'—';$('apiOutput').textContent=state.rawApi?JSON.stringify(state.rawApi,null,2):'Waiting for selected fleet API…';return;}$('replayBadge').textContent=r.scenarioName?`${r.scenarioName} • ${r.index+1}/${r.totalPoints}`:'waiting';$('replayDevice').textContent=r.deviceId||raw.deviceId||'—';$('replayPoint').textContent=r.totalPoints!=null?`${(r.index||0)+1} / ${r.totalPoints}`:'—';$('replayDelta').textContent=r.sourceDeltaSec!=null?`${fmt(r.sourceDeltaSec,1)} s`:'—';$('replayAccel').textContent=r.derivedLongitudinalAccelMps2!=null?`${fmt(r.derivedLongitudinalAccelMps2,3)} m/s²`:'—';$('apiOutput').textContent=state.rawApi?JSON.stringify(state.rawApi,null,2):'Waiting for replay data…';const h=state.lastHarshReplay;if(h){$('harshReplayBadge').textContent='HARSH EVENT';$('harshOutput').className='harsh-event-box';$('harshOutput').innerHTML=`<h4>Controlled harsh-braking event injected</h4><div class="harsh-event-grid"><div><span>Pre speed</span><strong>${fmt(h.preSpeedKmh,1)} km/h</strong></div><div><span>Post speed</span><strong>${fmt(h.postSpeedKmh,1)} km/h</strong></div><div><span>Speed drop</span><strong>${fmt(h.speedDropKmh,1)} km/h</strong></div><div><span>Peak decel.</span><strong>${fmt(h.peakDecelerationMps2,2)} m/s²</strong></div><div><span>Jerk</span><strong>${fmt(h.maxJerkMps3,1)} m/s³</strong></div><div><span>Duration</span><strong>${fmt(h.durationSec,2)} s</strong></div></div>`;}else{$('harshReplayBadge').textContent=sourceMode==='harsh_replay'?'armed':'not active';$('harshOutput').className='harsh-output-empty';$('harshOutput').textContent=sourceMode==='harsh_replay'?'Harsh replay armed. A controlled event will be injected when the route reaches its test point.':'Choose “Replay + harsh event”. The route will play normally and inject one controlled harsh-braking event each cycle.';}}
 function render(){const t=state.telemetry||{},c=state.context||{},pack=state.inference||{},p=pack.physics||{},i=pack.inference||{},comp=pack.model_comparison||{},trip=state.trip||{};if(i.model){updateGauge(i.probability_harsh,i.harsh_or_severe);$('modelName').textContent=i.model;$('decisionText').textContent=i.harsh_or_severe?'Harsh braking detected. Review the event and route location.':'No harsh/severe braking detected in the current event.';}$('newAiMini').textContent=comp.new_ai?`${fmt(comp.new_ai.probability_harsh*100,1)}%`:'—';$('friendMini').textContent=comp.friend_gbm?`${fmt(comp.friend_gbm.probability_harsh*100,1)}%`:'—';$('physicsMini').textContent=p.physics_label?pretty(p.physics_label):'—';$('speed').textContent=fmt(state.gps?.speed_kmh??t.post_event_speed_kmh??t.pre_event_speed_kmh,1);$('peak').textContent=fmt(t.peak_deceleration_mps2,2);$('jerk').textContent=fmt(t.max_jerk_mps3,2);$('util').textContent=p.utilisation!=null?fmt(p.utilisation*100,0):'—';$('distance').textContent=fmt(trip.distance_km,2);$('harshCount').textContent=trip.harsh_events??'—';$('mu').textContent=fmt(p.mu_est,3);$('angle').textContent=p.road_angle_deg!=null?`${fmt(p.road_angle_deg,2)}°`:'—';$('traction').textContent=p.a_traction_mps2!=null?`${fmt(p.a_traction_mps2,2)} m/s²`:'—';$('capability').textContent=p.a_capability_mps2!=null?`${fmt(p.a_capability_mps2,2)} m/s²`:'—';$('available').textContent=p.a_available_mps2!=null?`${fmt(p.a_available_mps2,2)} m/s²`:'—';$('brakeObs').textContent=p.observed_brake_component_mps2!=null?`${fmt(p.observed_brake_component_mps2,2)} m/s²`:'—';$('physicsLabel').textContent=p.physics_label?pretty(p.physics_label):'—';$('vehicle').textContent=pretty(c.vehicle_type);$('road').textContent=pretty(c.road_type);$('traffic').textContent=pretty(c.traffic_density);$('weather').textContent=pretty(c.weather);$('surface').textContent=pretty(c.road_surface);$('grade').textContent=c.road_grade_ratio!=null?`${fmt(c.road_grade_ratio*100,1)}%`:'—';$('qualityBadge').textContent=`GPS ${pretty(t.gps_quality)} • sensor ${pretty(t.sensor_quality)}`;if(i.components){$('submodelInfo').innerHTML=`XGBoost: <b>${fmt(i.components.xgboost_probability*100,1)}%</b> &nbsp; LightGBM: <b>${fmt(i.components.lightgbm_probability*100,1)}%</b><br>Ensemble: 60% XGBoost + 40% LightGBM • threshold ${fmt(i.threshold,3)}`;}else if(i.class_probabilities){const q=i.class_probabilities;$('submodelInfo').innerHTML=`Friend GBM 4-class probabilities — normal <b>${fmt((q.normal||0)*100,1)}%</b>, mild <b>${fmt((q.mild_braking||0)*100,1)}%</b>, harsh <b>${fmt((q.harsh_braking||0)*100,1)}%</b>, severe <b>${fmt((q.severe_braking||0)*100,1)}%</b>`;}renderSourcePayload();updateRoute();updateEvents();if(pack.server_time)$('updatedAt').textContent=`Updated ${new Date(pack.server_time).toLocaleString()}`;}
@@ -230,13 +234,13 @@ function editConnection(id){const c=state.connections.find(x=>x.connection_id===
 async function testConnection(id){const el=$('connectionFormStatus');el.className='form-status';el.textContent='Testing connection…';try{const out=await apiPost(`/api/connections/${encodeURIComponent(id)}/test`,{});el.className=`form-status ${out.ok?'success':'error'}`;el.textContent=out.ok?`Connected. Found ${out.vehicles.length} vehicle(s) in ${out.status?.latency_ms??'—'} ms.`:`Connection failed: ${out.status?.message||'unknown error'}`;if(out.vehicles?.length){await refreshFleet(false);}}catch(e){el.className='form-status error';el.textContent=e.message;}}
 async function deleteConnection(id){if(!confirm('Delete this API connection? Stored routes and events are not deleted.'))return;await apiDelete(`/api/connections/${encodeURIComponent(id)}`);if(selectedConnectionId===id){selectedConnectionId='';selectedExternalVehicleId='';}await loadConnections();await refreshFleet(false);}
 async function refreshFleet(fetchRemote=true){
-  const revision=authRevision,ownerId=user?.id;$('fleetSummary').textContent='Refreshing…';
+  const revision=authRevision,ownerId=user?.id,sourceAtRequest=sourceRevision;$('fleetSummary').textContent='Refreshing…';
   try{
     const out=fetchRemote?await apiPost('/api/fleet/discover',{}):await apiGet('/api/fleet');
     if(!sessionIsCurrent(revision,ownerId))return;
     state.fleet=out.vehicles||[];renderFleet();populateVehicleSelect();
     $('fleetSummary').textContent=`${state.connections.length} API${state.connections.length===1?'':'s'} • ${state.fleet.length} vehicle${state.fleet.length===1?'':'s'}`;
-    if(sourceMode==='fleet_api'&&!selectedExternalVehicleId&&state.fleet.length)selectFleetVehicle(state.fleet[0]);
+    if(sourceAtRequest===sourceRevision&&sourceMode==='fleet_api'&&!selectedExternalVehicleId&&state.fleet.length)selectFleetVehicle(state.fleet[0]);
   }catch(e){if(sessionIsCurrent(revision,ownerId))$('fleetSummary').textContent=`Fleet refresh error: ${e.message}`;}
 }
 function filteredFleet(){const f=$('fleetConnectionSelect').value||'all';return state.fleet.filter(v=>f==='all'||v.connection_id===f);}
@@ -254,20 +258,56 @@ function selectFleetVehicle(v){selectedConnectionId=v.connection_id;selectedExte
 function isReplayMode(){return sourceMode==='replay'||sourceMode==='harsh_replay';}
 function clearPlaybackTimer(){if(timer)clearTimeout(timer);timer=null;nextTickAt=null;}
 function playbackDelayMs(out){if(sourceMode==='fleet_api'&&out?.fleet_api?.poll_interval_sec)return Math.max(1000,Number(out.fleet_api.poll_interval_sec)*1000);if(isReplayMode()&&out?.replay?.sourceDeltaSec!=null){let sourceMs=Math.max(1,Number(out.replay.sourceDeltaSec))*1000;if(compressGaps)sourceMs=Math.min(sourceMs,30000);return Math.max(150,sourceMs/Math.max(1,playbackSpeed));}return Math.max(750,CALIBR8_CONFIG.pollMs||1000);}
-function updatePlaybackUI(delayMs=null){const replay=isReplayMode();$('replayControls').classList.toggle('hidden',!replay);$('startReplayBtn').disabled=!replay||isPlaying;$('pauseReplayBtn').disabled=!replay||!isPlaying;$('restartReplayBtn').disabled=!replay;$('injectHarshBtn').disabled=!replay||tickInFlight;$('playbackStatus').textContent=!replay?'Not a replay source':(isPlaying?'Playing':'Paused');if(!replay){$('nextTickText').textContent='Controls available for sample replay modes.';return;}if(!isPlaying){$('nextTickText').textContent=`Paused at point ${(state.replay?.index??-1)+1||0}`;return;}const d=delayMs??(nextTickAt?Math.max(0,nextTickAt-Date.now()):null);$('nextTickText').textContent=d==null?'Next point: now':`Next point in ${(d/1000).toFixed(d<1000?2:1)} s • ${playbackSpeed}×`;}
+function updatePlaybackUI(delayMs=null){
+  const replay=isReplayMode();$('replayControls').classList.toggle('hidden',!replay);
+  $('startReplayBtn').disabled=!replay||isPlaying||tickInFlight;
+  $('pauseReplayBtn').disabled=!replay||!isPlaying;
+  $('restartReplayBtn').disabled=!replay||tickInFlight;
+  $('injectHarshBtn').disabled=!replay||tickInFlight;
+  $('playbackStatus').textContent=!replay?'Not a replay source':tickInFlight?'Loading sample…':isPlaying?'Playing':state.replay?'Paused':'Ready to start';
+  if(!replay){$('nextTickText').textContent='Choose Sample API replay to run a recorded route.';return;}
+  if(tickInFlight){$('nextTickText').textContent='Reading the sample and calculating braking results…';return;}
+  if(!isPlaying){$('nextTickText').textContent=state.replay?`Paused at point ${state.replay.index+1}`:'Select a route, then press Start. No vehicle API is needed.';return;}
+  const delay=delayMs??(nextTickAt?Math.max(0,nextTickAt-Date.now()):null);
+  $('nextTickText').textContent=delay==null?'Next point: now':`Next point in ${(delay/1000).toFixed(delay<1000?2:1)} s · ${playbackSpeed}×`;
+}
+function showReplayError(message=''){
+  $('replayError').textContent=message;$('replayError').classList.toggle('hidden',!message);
+} 
 function scheduleNext(delayMs){clearPlaybackTimer();if(!isPlaying||sourceMode==='push')return updatePlaybackUI();const delay=Math.max(0,Number(delayMs)||0);nextTickAt=Date.now()+delay;updatePlaybackUI(delay);timer=setTimeout(()=>sourceTick(),delay);}
-async function sourceTick(forcePath=null){if(tickInFlight)return;if(sourceMode==='fleet_api'&&(!selectedConnectionId||!selectedExternalVehicleId)){$('liveText').textContent='SELECT VEHICLE';return;}tickInFlight=true;const generation=viewGeneration;updatePlaybackUI();try{let out=null;const body={vehicle_id:selectedVehicleId,model:selectedModel,mode,scenario:selectedScenario};if(forcePath==='inject')out=await apiPost('/api/replay/inject',body);else if(sourceMode==='fleet_api')out=await apiPost('/api/monitor/tick',{connection_id:selectedConnectionId,external_vehicle_id:selectedExternalVehicleId,model:selectedModel,mode});else if(sourceMode==='replay')out=await apiPost('/api/replay/tick',body);else if(sourceMode==='harsh_replay')out=await apiPost('/api/replay/harsh/tick',body);else if(sourceMode==='demo')out=await apiPost('/api/demo/tick',body);else if(sourceMode==='external')out=await apiPost('/api/sync',body);if(generation!==viewGeneration||!user)return;applyDashboardPayload(out);if(out?.fleet_api){state.rawApi=out.raw_api_output||null;const st=out.fleet_api.status||{};setApiStatus('telemetry',out.fleet_api.connection_name||'Fleet API',`${st.latency_ms??'—'} ms`,!st.ok);setApiStatus('gps','Vehicle position received',out.fleet_api.stale?'same point':'new point');setApiStatus('context','Configured API context','ready');renderSourcePayload();}if(out?.replay){state.replay=out.replay;state.rawApi=out.raw_api_output||null;if(out.harsh_event)state.lastHarshReplay=out.harsh_event;renderSourcePayload();}$('liveText').textContent=isPlaying?'LIVE':'PAUSED';const delay=playbackDelayMs(out);if(isPlaying&&sourceMode!=='push')scheduleNext(delay);else updatePlaybackUI();return out;}catch(e){$('liveText').textContent='RECONNECTING';setApiStatus('inference',e.message,'error',true);if(isPlaying&&sourceMode!=='push')scheduleNext(3000);}finally{tickInFlight=false;updatePlaybackUI();if(user&&generation!==viewGeneration&&isPlaying&&sourceMode!=='push')scheduleNext(0);}}
+async function sourceTick(forcePath=null){if(tickInFlight)return;if(sourceMode==='fleet_api'&&(!selectedConnectionId||!selectedExternalVehicleId)){$('liveText').textContent='SELECT VEHICLE';return;}tickInFlight=true;const generation=viewGeneration;if(isReplayMode())showReplayError();updatePlaybackUI();try{let out=null;const body={vehicle_id:selectedVehicleId,model:selectedModel,mode,scenario:selectedScenario};if(forcePath==='inject')out=await apiPost('/api/replay/inject',body);else if(sourceMode==='fleet_api')out=await apiPost('/api/monitor/tick',{connection_id:selectedConnectionId,external_vehicle_id:selectedExternalVehicleId,model:selectedModel,mode});else if(sourceMode==='replay')out=await apiPost('/api/replay/tick',body);else if(sourceMode==='harsh_replay')out=await apiPost('/api/replay/harsh/tick',body);else if(sourceMode==='demo')out=await apiPost('/api/demo/tick',body);else if(sourceMode==='external')out=await apiPost('/api/sync',body);if(generation!==viewGeneration||!user)return;applyDashboardPayload(out);if(out?.fleet_api){state.rawApi=out.raw_api_output||null;const st=out.fleet_api.status||{};setApiStatus('telemetry',out.fleet_api.connection_name||'Fleet API',`${st.latency_ms??'—'} ms`,!st.ok);setApiStatus('gps','Vehicle position received',out.fleet_api.stale?'same point':'new point');setApiStatus('context','Configured API context','ready');renderSourcePayload();}if(out?.replay){state.replay=out.replay;state.rawApi=out.raw_api_output||null;if(out.harsh_event)state.lastHarshReplay=out.harsh_event;renderSourcePayload();}$('liveText').textContent=isPlaying?'LIVE':'PAUSED';const delay=playbackDelayMs(out);if(isPlaying&&sourceMode!=='push')scheduleNext(delay);else updatePlaybackUI();return out;}catch(e){if(generation!==viewGeneration||!user)return;setApiStatus('inference',e.message,'error',true);if(isReplayMode()){isPlaying=false;clearPlaybackTimer();$('liveText').textContent='PAUSED';showReplayError(`Sample replay could not load: ${e.message}. Press Start to retry.`);}else{$('liveText').textContent='RECONNECTING';if(isPlaying&&sourceMode!=='push')scheduleNext(3000);}}finally{tickInFlight=false;updatePlaybackUI();if(user&&generation!==viewGeneration&&isPlaying&&sourceMode!=='push')scheduleNext(0);}}
 function updateSourceUI(){const replay=isReplayMode(),customer=sourceMode==='fleet_api';$('scenarioControl').classList.toggle('hidden',!replay);$('fleetConnectionControl').classList.toggle('hidden',!customer);$('fleetVehicleControl').classList.toggle('hidden',!customer);$('fleetPanel').classList.toggle('hidden',!customer);$('replayControls').classList.toggle('hidden',!replay);document.querySelector('.replay-grid')?.classList.toggle('hidden',!(replay||customer));$('harshOutputCard').classList.toggle('hidden',!replay);if(sourceMode!=='harsh_replay')state.lastHarshReplay=null;renderSourcePayload();updatePlaybackUI();}
 function restartTimer({immediate=true}={}){clearPlaybackTimer();updateSourceUI();if(sourceMode==='push'){$('liveText').textContent='LIVE';requestInferenceSoon();return;}if(sourceMode==='fleet_api'&&!selectedExternalVehicleId){$('liveText').textContent='SELECT VEHICLE';return;}if(!isPlaying){$('liveText').textContent='PAUSED';updatePlaybackUI();return;}if(immediate)sourceTick();else scheduleNext(sourceMode==='fleet_api'?3000:(CALIBR8_CONFIG.pollMs||1000));}
-async function restartReplay(){if(!isReplayMode())return;clearPlaybackTimer();unsubscribeVehicle();resetVehicleView();try{await apiPost('/api/replay/reset',{vehicle_id:selectedVehicleId,scenario:selectedScenario});state.lastHarshReplay=null;state.replay=null;state.rawApi=null;labels.splice(0);speeds.splice(0);decels.splice(0);window.telemetryChart?.update();attachLiveListeners();renderSourcePayload();if(isPlaying)sourceTick();else updatePlaybackUI();}catch(e){console.error(e);}}
+async function restartReplay(){if(!isReplayMode())return;clearPlaybackTimer();unsubscribeVehicle();resetVehicleView();try{await apiPost('/api/replay/reset',{vehicle_id:selectedVehicleId,scenario:selectedScenario});state.lastHarshReplay=null;state.replay=null;state.rawApi=null;labels.splice(0);speeds.splice(0);decels.splice(0);telemetryChart?.update();attachLiveListeners();renderSourcePayload();if(isPlaying)sourceTick();else updatePlaybackUI();}catch(e){console.error(e);}}
 function switchToDemoVehicle(){selectedVehicleId=CALIBR8_CONFIG.vehicleId||'demo_vehicle';selectedConnectionId='';selectedExternalVehicleId='';attachLiveListeners();}
 
 // Event handlers -----------------------------------------------------------------------
 document.querySelectorAll('.seg').forEach(btn=>btn.addEventListener('click',async()=>{document.querySelectorAll('.seg').forEach(b=>b.classList.remove('active'));btn.classList.add('active');selectedModel=btn.dataset.model;updateWorkspaceSummary();$('modeSelect').disabled=selectedModel==='friend_gbm';$('modelNote').textContent=selectedModel==='friend_gbm'?'Original 4-class HistGradientBoosting model':`XGBoost + LightGBM ensemble • ${mode} threshold`;try{if(state.telemetry)applyDashboardPayload(await apiPost('/api/inference',{vehicle_id:selectedVehicleId,model:selectedModel,mode}));}catch(e){console.error(e);}}));
 $('modeSelect').addEventListener('change',async e=>{mode=e.target.value;updateWorkspaceSummary();$('modelNote').textContent=`XGBoost + LightGBM ensemble • ${mode} threshold`;try{if(state.telemetry)applyDashboardPayload(await apiPost('/api/inference',{vehicle_id:selectedVehicleId,model:selectedModel,mode}));}catch(e){console.error(e);}});
-$('sourceSelect').value=sourceMode;$('sourceSelect').addEventListener('change',async e=>{sourceMode=e.target.value;state.lastHarshReplay=null;isPlaying=sourceMode!=='push';if(sourceMode!=='fleet_api')switchToDemoVehicle();else{await refreshFleet(false);const chosen=state.fleet.find(v=>v.internal_vehicle_id===selectedVehicleId)||state.fleet[0];if(chosen)selectFleetVehicle(chosen);}restartTimer();});
+async function setDataSource(next,{play=false}={}){
+  if(!['fleet_api','replay','harsh_replay','demo','external','push'].includes(next))return;
+  const revision=++sourceRevision;clearPlaybackTimer();sourceMode=next;$('sourceSelect').value=next;
+  state.lastHarshReplay=null;showReplayError();isPlaying=isReplayMode()?play:sourceMode!=='push';
+  // Update the visible controls immediately, before any fleet request completes.
+  unsubscribeVehicle();resetVehicleView();updateSourceUI();
+  if(sourceMode!=='fleet_api'){
+    selectedVehicleId=CALIBR8_CONFIG.vehicleId||'demo_vehicle';selectedConnectionId='';selectedExternalVehicleId='';
+    if(user)attachLiveListeners();restartTimer();return;
+  }
+  selectedConnectionId='';selectedExternalVehicleId='';$('liveText').textContent='SELECT VEHICLE';
+  if(!user)return;
+  await refreshFleet(true);
+  if(revision!==sourceRevision||!user)return;
+  const chosen=state.fleet.find(v=>v.internal_vehicle_id===selectedVehicleId)||state.fleet[0];
+  if(chosen){if(selectedVehicleId!==chosen.internal_vehicle_id||!selectedExternalVehicleId)selectFleetVehicle(chosen);}
+  else{$('liveText').textContent='NO VEHICLES';updateSourceUI();}
+}
+$('sourceSelect').value=sourceMode;
+$('sourceSelect').addEventListener('change',event=>{setDataSource(event.target.value).catch(error=>window.CALIBR8_UI?.toast(error.message));});
+$('runSampleBtn').addEventListener('click',()=>{window.CALIBR8_UI?.setView('overview');setDataSource('replay',{play:true}).catch(error=>showReplayError(error.message));});
+$('showPayloadBtn').addEventListener('click',()=>{window.CALIBR8_UI?.setView('insights');const panel=document.querySelector('.source-details');panel.open=true;panel.scrollIntoView?.({behavior:'smooth',block:'start'});});
 $('scenarioSelect').value=selectedScenario;$('scenarioSelect').addEventListener('change',async e=>{selectedScenario=e.target.value;unsubscribeVehicle();resetVehicleView();state.lastHarshReplay=null;state.replay=null;state.rawApi=null;try{await apiPost('/api/replay/reset',{vehicle_id:selectedVehicleId,scenario:selectedScenario});}catch(err){console.error(err);}attachLiveListeners();renderSourcePayload();if(isReplayMode())restartTimer();});
-$('resetBtn').addEventListener('click',async()=>{try{if(isReplayMode()){await restartReplay();return;}await apiPost('/api/reset',{vehicle_id:selectedVehicleId});attachLiveListeners();state.lastHarshReplay=null;state.replay=null;state.rawApi=null;labels.splice(0);speeds.splice(0);decels.splice(0);window.telemetryChart?.update();renderSourcePayload();}catch(e){console.error(e);}});
+$('resetBtn').addEventListener('click',async()=>{try{if(isReplayMode()){await restartReplay();return;}await apiPost('/api/reset',{vehicle_id:selectedVehicleId});attachLiveListeners();state.lastHarshReplay=null;state.replay=null;state.rawApi=null;labels.splice(0);speeds.splice(0);decels.splice(0);telemetryChart?.update();renderSourcePayload();}catch(e){console.error(e);}});
 $('playbackSpeed').value=String(playbackSpeed);$('playbackSpeed').addEventListener('change',e=>{playbackSpeed=Math.max(1,Number(e.target.value)||1);if(isPlaying&&isReplayMode())restartTimer({immediate:false});else updatePlaybackUI();});$('compressGaps').checked=compressGaps;$('compressGaps').addEventListener('change',e=>{compressGaps=Boolean(e.target.checked);if(isPlaying&&isReplayMode())restartTimer({immediate:false});else updatePlaybackUI();});$('startReplayBtn').addEventListener('click',()=>{if(!isReplayMode())return;isPlaying=true;$('liveText').textContent='LIVE';restartTimer({immediate:true});});$('pauseReplayBtn').addEventListener('click',()=>{if(!isReplayMode())return;isPlaying=false;clearPlaybackTimer();$('liveText').textContent='PAUSED';updatePlaybackUI();});$('restartReplayBtn').addEventListener('click',()=>restartReplay());$('injectHarshBtn').addEventListener('click',async()=>{if(!isReplayMode()||tickInFlight)return;clearPlaybackTimer();try{await sourceTick('inject');}finally{if(!isPlaying)updatePlaybackUI();}});
 $('exportBtn').addEventListener('click',async()=>{if(!state.trip?.active_trip_id){window.CALIBR8_UI?.toast('Start monitoring a vehicle before exporting events.');return;}try{const tok=await token();const r=await fetch(`/api/export/events.csv?vehicle_id=${encodeURIComponent(selectedVehicleId)}&trip_id=${encodeURIComponent(state.trip.active_trip_id)}`,{headers:{Authorization:`Bearer ${tok}`}});if(!r.ok)throw new Error(`HTTP ${r.status}`);const blob=await r.blob(),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`calibr8_${selectedVehicleId}_${state.trip.active_trip_id}_events.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}catch(e){console.error(e);}});
 $('fleetConnectionSelect').addEventListener('change',()=>{renderFleet();populateVehicleSelect();});$('fleetVehicleSelect').addEventListener('change',()=>{const v=state.fleet.find(x=>x.internal_vehicle_id===$('fleetVehicleSelect').value);if(v)selectFleetVehicle(v);});$('refreshFleetBtn').addEventListener('click',()=>refreshFleet(true));
@@ -349,18 +389,20 @@ function handleSession(nextSession){
     try{resetVehicleView();renderConnections();renderFleet();populateConnectionFilter();populateVehicleSelect();}catch(error){console.warn('Signed-out view cleanup:',error.message);}
     return;
   }
-  // Show the authenticated workspace before fleet requests or widget rendering.
+  // Synchronize the source controls before exposing the authenticated workspace.
+  updateSourceUI();
   document.body.classList.add('workspace-authenticated');$('authGate').classList.add('hidden');
   $('authStatus').textContent=user.email||'Authenticated user';$('accountInitial').textContent=(user.email||'U').slice(0,1).toUpperCase();
   $('signOutBtn').style.display='inline-block';$('authMessage').textContent='';
   if(workspaceOwnerId===user.id&&(initialized||workspaceLoad||workspaceInitTimer))return;
   const ownerId=user.id,revision=++authRevision;
+  const sourceAtAuth=sourceRevision;
   workspaceOwnerId=ownerId;initialized=false;$('firestoreStatus').textContent='Loading workspace';
   clearTimeout(workspaceInitTimer);
   workspaceInitTimer=setTimeout(()=>{
     workspaceInitTimer=null;
     if(!sessionIsCurrent(revision,ownerId))return;
-    workspaceLoad=initializeWorkspace(revision,ownerId).catch(error=>{
+    workspaceLoad=initializeWorkspace(revision,ownerId,sourceAtAuth).catch(error=>{
       if(sessionIsCurrent(revision,ownerId)){
         $('firestoreStatus').textContent='Workspace data unavailable';
         window.CALIBR8_UI?.toast('Signed in. Some workspace data could not load: '+error.message);
@@ -368,18 +410,18 @@ function handleSession(nextSession){
     }).finally(()=>{if(sessionIsCurrent(revision,ownerId)){workspaceLoad=null;initialized=true;}});
   },0);
 }
-async function initializeWorkspace(revision,ownerId){
+async function initializeWorkspace(revision,ownerId,sourceAtStart=sourceRevision){
   try{await loadConnections();}
   catch(error){if(sessionIsCurrent(revision,ownerId))window.CALIBR8_UI?.toast('Signed in. API connections could not load: '+error.message);}
-  if(!sessionIsCurrent(revision,ownerId))return;
+  if(!sessionIsCurrent(revision,ownerId)||sourceAtStart!==sourceRevision)return;
   await refreshFleet(true);
-  if(!sessionIsCurrent(revision,ownerId))return;
+  if(!sessionIsCurrent(revision,ownerId)||sourceAtStart!==sourceRevision)return;
   if(sourceMode==='fleet_api'){
     const vehicle=state.fleet.find(v=>v.internal_vehicle_id===selectedVehicleId)||state.fleet[0];
     if(vehicle)selectFleetVehicle(vehicle);
     else{$('liveText').textContent='ADD API';updateSourceUI();}
   }else{switchToDemoVehicle();restartTimer();}
-  try{map?.invalidateSize();window.telemetryChart?.resize?.();}catch(error){console.warn('Widget resize:',error.message);}
+  try{map?.invalidateSize();telemetryChart?.resize?.();}catch(error){console.warn('Widget resize:',error.message);}
 }
 
 // Register before initializing optional visual widgets or reading stored sessions.
@@ -398,5 +440,5 @@ supabase.auth.getSession().then(({data,error})=>{
 
 // An unavailable map/chart must not interrupt authentication or screen changes.
 try{initMap();}catch(error){map=routeLine=carMarker=null;$('map').textContent='Map could not load. GPS coordinates remain available.';console.warn('Map initialization:',error.message);}
-try{initChart();}catch(error){window.telemetryChart=null;console.warn('Chart initialization:',error.message);}
+try{initChart();}catch(error){telemetryChart=null;console.warn('Chart initialization:',error.message);}
 try{resetVehicleView();updateSourceUI();}catch(error){console.warn('Dashboard initialization:',error.message);}
