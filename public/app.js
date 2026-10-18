@@ -14,6 +14,7 @@ let selectedVehicleId=CALIBR8_CONFIG.vehicleId||'demo_vehicle', selectedConnecti
 let map,routeLine,carMarker,routeUnsub,eventUnsub,timer=null,inferenceTimer=null,lastInferenceKey='',tripUnsub=null;
 let liveUnsubs=[];let isPlaying=true,playbackSpeed=5,compressGaps=true,nextTickAt=null,tickInFlight=false,initialized=false;
 let user=null,session=null;
+let authSignal=0,authRevision=0,workspaceOwnerId=null,workspaceInitTimer=null,workspaceLoad=null,authBusy=false;
 let viewGeneration=0,snapshotTimer=null,snapshotInFlight=false,lastDataAt=0,lastChartKey='';
 const liveVersions=new Map();
 const harshMarkers=[],labels=[],speeds=[],decels=[];
@@ -87,7 +88,7 @@ function renderSourcePayload(){updateWorkspaceSummary();const r=state.replay||{}
 function render(){const t=state.telemetry||{},c=state.context||{},pack=state.inference||{},p=pack.physics||{},i=pack.inference||{},comp=pack.model_comparison||{},trip=state.trip||{};if(i.model){updateGauge(i.probability_harsh,i.harsh_or_severe);$('modelName').textContent=i.model;$('decisionText').textContent=i.harsh_or_severe?'Harsh braking detected. Review the event and route location.':'No harsh/severe braking detected in the current event.';}$('newAiMini').textContent=comp.new_ai?`${fmt(comp.new_ai.probability_harsh*100,1)}%`:'—';$('friendMini').textContent=comp.friend_gbm?`${fmt(comp.friend_gbm.probability_harsh*100,1)}%`:'—';$('physicsMini').textContent=p.physics_label?pretty(p.physics_label):'—';$('speed').textContent=fmt(state.gps?.speed_kmh??t.post_event_speed_kmh??t.pre_event_speed_kmh,1);$('peak').textContent=fmt(t.peak_deceleration_mps2,2);$('jerk').textContent=fmt(t.max_jerk_mps3,2);$('util').textContent=p.utilisation!=null?fmt(p.utilisation*100,0):'—';$('distance').textContent=fmt(trip.distance_km,2);$('harshCount').textContent=trip.harsh_events??'—';$('mu').textContent=fmt(p.mu_est,3);$('angle').textContent=p.road_angle_deg!=null?`${fmt(p.road_angle_deg,2)}°`:'—';$('traction').textContent=p.a_traction_mps2!=null?`${fmt(p.a_traction_mps2,2)} m/s²`:'—';$('capability').textContent=p.a_capability_mps2!=null?`${fmt(p.a_capability_mps2,2)} m/s²`:'—';$('available').textContent=p.a_available_mps2!=null?`${fmt(p.a_available_mps2,2)} m/s²`:'—';$('brakeObs').textContent=p.observed_brake_component_mps2!=null?`${fmt(p.observed_brake_component_mps2,2)} m/s²`:'—';$('physicsLabel').textContent=p.physics_label?pretty(p.physics_label):'—';$('vehicle').textContent=pretty(c.vehicle_type);$('road').textContent=pretty(c.road_type);$('traffic').textContent=pretty(c.traffic_density);$('weather').textContent=pretty(c.weather);$('surface').textContent=pretty(c.road_surface);$('grade').textContent=c.road_grade_ratio!=null?`${fmt(c.road_grade_ratio*100,1)}%`:'—';$('qualityBadge').textContent=`GPS ${pretty(t.gps_quality)} • sensor ${pretty(t.sensor_quality)}`;if(i.components){$('submodelInfo').innerHTML=`XGBoost: <b>${fmt(i.components.xgboost_probability*100,1)}%</b> &nbsp; LightGBM: <b>${fmt(i.components.lightgbm_probability*100,1)}%</b><br>Ensemble: 60% XGBoost + 40% LightGBM • threshold ${fmt(i.threshold,3)}`;}else if(i.class_probabilities){const q=i.class_probabilities;$('submodelInfo').innerHTML=`Friend GBM 4-class probabilities — normal <b>${fmt((q.normal||0)*100,1)}%</b>, mild <b>${fmt((q.mild_braking||0)*100,1)}%</b>, harsh <b>${fmt((q.harsh_braking||0)*100,1)}%</b>, severe <b>${fmt((q.severe_braking||0)*100,1)}%</b>`;}renderSourcePayload();updateRoute();updateEvents();if(pack.server_time)$('updatedAt').textContent=`Updated ${new Date(pack.server_time).toLocaleString()}`;}
 
 if(!configReady()){$('liveText').textContent='CONFIG NEEDED';$('authStatus').textContent='not configured';$('firestoreStatus').textContent='not configured';['telemetry','gps','context','inference'].forEach(k=>setApiStatus(k,'Configure Supabase environment variables on Render','setup',true));throw new Error('Supabase client configuration is unavailable');}
-async function token(){const {data,error}=await supabase.auth.getSession();if(error||!data.session)throw new Error('Not authenticated');session=data.session;user=data.session.user;return data.session.access_token;}
+async function token(){const {data,error}=await supabase.auth.getSession();if(error||!data.session?.access_token)throw new Error('Not authenticated');return data.session.access_token;}
 async function apiRequest(path,{method='GET',body}={}){const tok=await token();const t=performance.now();const opts={method,headers:{'Authorization':`Bearer ${tok}`},cache:'no-store'};if(body!==undefined){opts.headers['Content-Type']='application/json';opts.body=JSON.stringify(body);}const r=await fetch(path,opts);const ms=performance.now()-t;let data=null;try{data=await r.json();}catch{}if(!r.ok)throw new Error(data?.detail?`${r.status} ${typeof data.detail==='string'?data.detail:JSON.stringify(data.detail)}`:`HTTP ${r.status}`);setApiStatus('inference','Render API connected',`${ms.toFixed(0)} ms`);return data;}
 const apiPost=(p,b={})=>apiRequest(p,{method:'POST',body:b});const apiGet=p=>apiRequest(p);const apiDelete=p=>apiRequest(p,{method:'DELETE'});
 
@@ -220,14 +221,24 @@ function attachLiveListeners(){
 function requestInferenceSoon(){clearTimeout(inferenceTimer);inferenceTimer=setTimeout(async()=>{if(sourceMode!=='push'||!state.telemetry||!state.gps||!state.context)return;const generation=viewGeneration;const key=[state.telemetry.server_updated_at,state.gps.server_updated_at,state.context.server_updated_at,selectedModel,mode,selectedVehicleId].join('|');if(key===lastInferenceKey)return;try{const out=await apiPost('/api/inference',{vehicle_id:selectedVehicleId,model:selectedModel,mode});if(generation===viewGeneration){applyDashboardPayload(out);lastInferenceKey=key;}}catch(e){setApiStatus('inference',e.message,'error',true);}},250);}
 
 // Fleet API connection management ---------------------------------------------------
-async function loadConnections(){const out=await apiGet('/api/connections');state.connections=out.connections||[];renderConnections();populateConnectionFilter();return state.connections;}
+function sessionIsCurrent(revision,ownerId){return revision===authRevision&&Boolean(ownerId)&&user?.id===ownerId;}
+async function loadConnections(){const revision=authRevision,ownerId=user?.id;const out=await apiGet('/api/connections');if(!sessionIsCurrent(revision,ownerId))return [];state.connections=out.connections||[];renderConnections();populateConnectionFilter();return state.connections;}
 function populateConnectionFilter(){const sel=$('fleetConnectionSelect'),current=sel.value||'all';sel.innerHTML='<option value="all">All connections</option>'+state.connections.map(c=>`<option value="${esc(c.connection_id)}">${esc(c.name)}</option>`).join('');sel.value=[...sel.options].some(o=>o.value===current)?current:'all';renderFleet();}
 function renderConnections(){const root=$('connectionsList');if(!state.connections.length){root.innerHTML='<div class="empty-fleet">No live APIs saved yet. Add the first connection below.</div>';return;}root.innerHTML=state.connections.map(c=>`<div class="connection-row"><div class="meta"><strong>${esc(c.name)}</strong><span>${c.enabled?'Enabled':'Disabled'} • ${c.has_headers?'secured headers':'no headers'}</span></div><div class="meta"><span>${esc(c.url)}</span><span>${esc(c.field_mapping?.device_id||'deviceId')} • ${esc(c.field_mapping?.latitude||'latitude')}/${esc(c.field_mapping?.longitude||'longitude')} • every ${c.poll_interval_sec||5}s</span></div><div class="connection-row-actions"><button class="button small ghost" data-test-conn="${esc(c.connection_id)}">Test</button><button class="button small ghost" data-edit-conn="${esc(c.connection_id)}">Edit</button><button class="button small danger" data-delete-conn="${esc(c.connection_id)}">Delete</button></div></div>`).join('');root.querySelectorAll('[data-test-conn]').forEach(b=>b.addEventListener('click',()=>testConnection(b.dataset.testConn)));root.querySelectorAll('[data-edit-conn]').forEach(b=>b.addEventListener('click',()=>editConnection(b.dataset.editConn)));root.querySelectorAll('[data-delete-conn]').forEach(b=>b.addEventListener('click',()=>deleteConnection(b.dataset.deleteConn)));}
 function clearConnectionForm(){$('connectionForm').reset();$('connectionId').value='';$('mapDevice').value='deviceId';$('mapTimestamp').value='dateTime';$('mapLat').value='latitude';$('mapLon').value='longitude';$('mapSpeed').value='speed';$('mapDirection').value='direction';$('timestampFormat').value='epoch_seconds';$('speedUnit').value='kmh';$('pollInterval').value='5';$('ctxVehicle').value='passenger_car';$('ctxRoad').value='urban';$('ctxTraffic').value='medium';$('ctxWeather').value='clear';$('ctxSurface').value='dry_asphalt';$('ctxGrade').value='0';$('connectionEnabled').checked=true;$('connectionFormStatus').textContent='';}
 function editConnection(id){const c=state.connections.find(x=>x.connection_id===id);if(!c)return;$('connectionId').value=c.connection_id;$('connectionName').value=c.name||'';$('connectionUrl').value=c.url||'';$('connectionHeaders').value='';$('rootPath').value=c.root_path||'';$('mapDevice').value=c.field_mapping?.device_id||'deviceId';$('mapTimestamp').value=c.field_mapping?.timestamp||'dateTime';$('mapLat').value=c.field_mapping?.latitude||'latitude';$('mapLon').value=c.field_mapping?.longitude||'longitude';$('mapSpeed').value=c.field_mapping?.speed||'speed';$('mapDirection').value=c.field_mapping?.direction||'direction';$('timestampFormat').value=c.timestamp_format||'epoch_seconds';$('speedUnit').value=c.speed_unit||'kmh';$('pollInterval').value=String(c.poll_interval_sec||5);$('ctxVehicle').value=c.default_context?.vehicle_type||'passenger_car';$('ctxRoad').value=c.default_context?.road_type||'urban';$('ctxTraffic').value=c.default_context?.traffic_density||'medium';$('ctxWeather').value=c.default_context?.weather||'clear';$('ctxSurface').value=c.default_context?.road_surface||'dry_asphalt';$('ctxGrade').value=String(Number(c.default_context?.road_grade_ratio||0)*100);$('connectionEnabled').checked=c.enabled!==false;$('connectionFormStatus').textContent=c.has_headers?'Stored headers are encrypted. Leave headers blank to keep them.':'';$('connectionName').focus();}
 async function testConnection(id){const el=$('connectionFormStatus');el.className='form-status';el.textContent='Testing connection…';try{const out=await apiPost(`/api/connections/${encodeURIComponent(id)}/test`,{});el.className=`form-status ${out.ok?'success':'error'}`;el.textContent=out.ok?`Connected. Found ${out.vehicles.length} vehicle(s) in ${out.status?.latency_ms??'—'} ms.`:`Connection failed: ${out.status?.message||'unknown error'}`;if(out.vehicles?.length){await refreshFleet(false);}}catch(e){el.className='form-status error';el.textContent=e.message;}}
 async function deleteConnection(id){if(!confirm('Delete this API connection? Stored routes and events are not deleted.'))return;await apiDelete(`/api/connections/${encodeURIComponent(id)}`);if(selectedConnectionId===id){selectedConnectionId='';selectedExternalVehicleId='';}await loadConnections();await refreshFleet(false);}
-async function refreshFleet(fetchRemote=true){$('fleetSummary').textContent='Refreshing…';try{let out=fetchRemote?await apiPost('/api/fleet/discover',{}):await apiGet('/api/fleet');state.fleet=out.vehicles||[];renderFleet();populateVehicleSelect();$('fleetSummary').textContent=`${state.connections.length} API${state.connections.length===1?'':'s'} • ${state.fleet.length} vehicle${state.fleet.length===1?'':'s'}`;if(sourceMode==='fleet_api'&&!selectedExternalVehicleId&&state.fleet.length)selectFleetVehicle(state.fleet[0]);}catch(e){$('fleetSummary').textContent=`Fleet refresh error: ${e.message}`;}}
+async function refreshFleet(fetchRemote=true){
+  const revision=authRevision,ownerId=user?.id;$('fleetSummary').textContent='Refreshing…';
+  try{
+    const out=fetchRemote?await apiPost('/api/fleet/discover',{}):await apiGet('/api/fleet');
+    if(!sessionIsCurrent(revision,ownerId))return;
+    state.fleet=out.vehicles||[];renderFleet();populateVehicleSelect();
+    $('fleetSummary').textContent=`${state.connections.length} API${state.connections.length===1?'':'s'} • ${state.fleet.length} vehicle${state.fleet.length===1?'':'s'}`;
+    if(sourceMode==='fleet_api'&&!selectedExternalVehicleId&&state.fleet.length)selectFleetVehicle(state.fleet[0]);
+  }catch(e){if(sessionIsCurrent(revision,ownerId))$('fleetSummary').textContent=`Fleet refresh error: ${e.message}`;}
+}
 function filteredFleet(){const f=$('fleetConnectionSelect').value||'all';return state.fleet.filter(v=>f==='all'||v.connection_id===f);}
 function renderFleet(){
   if(!$('fleetGrid'))return;$('fleetCount').textContent=state.fleet.length;
@@ -269,20 +280,123 @@ $('enableFleetBtn').addEventListener('click',()=>{$('sourceSelect').value='fleet
 $('centerMapBtn').addEventListener('click',()=>{if(map&&state.gps?.lat!=null&&state.gps?.lon!=null)map.setView([state.gps.lat,state.gps.lon],Math.max(15,map.getZoom()));else window.CALIBR8_UI?.toast('Waiting for a vehicle location.');});
 
 // Authentication -----------------------------------------------------------------------
+// The returned sign-in session and auth notifications both enter the same UI path.
+// No database/API work runs while Supabase is dispatching an auth notification.
 $('createAccountBtn').classList.toggle('hidden', CALIBR8_CONFIG.allowSelfSignup !== true);
 $('anonymousBtn').classList.toggle('hidden', CALIBR8_CONFIG.allowAnonymousDemo !== true);
-$('authForm').addEventListener('submit',async e=>{e.preventDefault();$('authMessage').className='form-status';$('authMessage').textContent='Signing in…';const {error}=await supabase.auth.signInWithPassword({email:$('authEmail').value.trim(),password:$('authPassword').value});if(error){$('authMessage').className='form-status error';$('authMessage').textContent=error.message;}else{$('authMessage').textContent='';}});
-$('createAccountBtn').addEventListener('click',async()=>{if(CALIBR8_CONFIG.allowSelfSignup!==true)return;$('authMessage').textContent='Creating account…';const {error}=await supabase.auth.signUp({email:$('authEmail').value.trim(),password:$('authPassword').value});if(error){$('authMessage').className='form-status error';$('authMessage').textContent=error.message;}else{$('authMessage').className='form-status success';$('authMessage').textContent='Account created. Check email if confirmation is enabled.';}});
-$('anonymousBtn').addEventListener('click',async()=>{if(CALIBR8_CONFIG.allowAnonymousDemo!==true)return;const {error}=await supabase.auth.signInAnonymously();if(error){$('authMessage').className='form-status error';$('authMessage').textContent=error.message;}});
-$('signOutBtn').addEventListener('click',()=>supabase.auth.signOut());
 
-async function handleSession(newSession){session=newSession;user=newSession?.user||null;if(!user){unsubscribeVehicle();clearPlaybackTimer();document.body.classList.remove('workspace-authenticated');$('authGate').classList.remove('hidden');$('authStatus').textContent='signed out';$('signOutBtn').style.display='none';return;}document.body.classList.add('workspace-authenticated');$('authGate').classList.add('hidden');$('authStatus').textContent=user.email||'Authenticated user';$('accountInitial').textContent=(user.email||'U').slice(0,1).toUpperCase();$('firestoreStatus').textContent='connecting';$('signOutBtn').style.display='inline-block';try{await loadConnections();await refreshFleet(true);}catch(e){console.warn(e);}if(sourceMode==='fleet_api'){const v=state.fleet[0];if(v)selectFleetVehicle(v);else{$('liveText').textContent='ADD API';updateSourceUI();}}else{switchToDemoVehicle();restartTimer();}initialized=true;}
-
-initMap();initChart();resetVehicleView();updateSourceUI();
-const {data:initialAuth}=await supabase.auth.getSession();
-await handleSession(initialAuth.session);
-supabase.auth.onAuthStateChange((_event,newSession)=>{
-  if(initialized&&newSession?.user?.id===user?.id){session=newSession;user=newSession.user;return;}
-  // Auth callbacks must return before making further Supabase Auth calls.
-  setTimeout(()=>handleSession(newSession).catch(console.error),0);
+function setAuthBusy(busy){
+  authBusy=busy;$('authForm').setAttribute('aria-busy',String(busy));
+  const submit=$('authForm').querySelector('button[type="submit"]');if(submit)submit.disabled=busy;
+}
+function authProblem(error,fallback='Sign-in could not be completed. Please try again.'){
+  $('authMessage').className='form-status error';$('authMessage').textContent=error?.message||fallback;
+}
+function acceptSession(nextSession){
+  // Ignore any older initial-session read or queued notification.
+  authSignal++;handleSession(nextSession);
+}
+async function finishSignIn(data){
+  let next=data?.session;
+  if(!next?.access_token){const restored=await supabase.auth.getSession();if(restored.error)throw restored.error;next=restored.data?.session;}
+  if(!next?.access_token||!next.user?.id)throw new Error('Sign-in returned no usable session. Please try again.');
+  acceptSession(next);$('authPassword').value='';$('authMessage').textContent='';
+}
+$('authForm').addEventListener('submit',async event=>{
+  event.preventDefault();if(authBusy)return;setAuthBusy(true);
+  $('authMessage').className='form-status';$('authMessage').textContent='Signing in…';
+  try{
+    const {data,error}=await supabase.auth.signInWithPassword({email:$('authEmail').value.trim(),password:$('authPassword').value});
+    if(error)throw error;
+    // A successful HTTP response opens the workspace directly, even if SIGNED_IN
+    // is delayed, missed, or was already delivered before this promise resolves.
+    await finishSignIn(data);
+  }catch(error){authProblem(error);}finally{setAuthBusy(false);}
 });
+$('createAccountBtn').addEventListener('click',async()=>{
+  if(CALIBR8_CONFIG.allowSelfSignup!==true||authBusy)return;setAuthBusy(true);
+  $('authMessage').className='form-status';$('authMessage').textContent='Creating account…';
+  try{
+    const {data,error}=await supabase.auth.signUp({email:$('authEmail').value.trim(),password:$('authPassword').value});
+    if(error)throw error;
+    if(data?.session)await finishSignIn(data);
+    else{$('authMessage').className='form-status success';$('authMessage').textContent='Account created. Check your email if confirmation is required.';}
+  }catch(error){authProblem(error);}finally{setAuthBusy(false);}
+});
+$('anonymousBtn').addEventListener('click',async()=>{
+  if(CALIBR8_CONFIG.allowAnonymousDemo!==true||authBusy)return;setAuthBusy(true);
+  try{const {data,error}=await supabase.auth.signInAnonymously();if(error)throw error;await finishSignIn(data);}
+  catch(error){authProblem(error);}finally{setAuthBusy(false);}
+});
+$('signOutBtn').addEventListener('click',async()=>{
+  $('signOutBtn').disabled=true;
+  try{const result=await supabase.auth.signOut();if(result?.error)throw result.error;acceptSession(null);}
+  catch(error){window.CALIBR8_UI?.toast(error.message||'Could not sign out. Please try again.');}
+  finally{$('signOutBtn').disabled=false;}
+});
+
+function handleSession(nextSession){
+  const next=nextSession?.access_token&&nextSession.user?.id?nextSession:null;
+  session=next;user=next?.user||null;
+  if(!user){
+    authRevision++;initialized=false;workspaceOwnerId=null;workspaceLoad=null;
+    clearTimeout(workspaceInitTimer);workspaceInitTimer=null;
+    document.body.classList.remove('workspace-authenticated');$('authGate').classList.remove('hidden');
+    $('authStatus').textContent='Signed out';$('signOutBtn').style.display='none';$('authPassword').value='';
+    unsubscribeVehicle();clearPlaybackTimer();state.connections=[];state.fleet=[];
+    selectedConnectionId='';selectedExternalVehicleId='';selectedVehicleId=CALIBR8_CONFIG.vehicleId||'demo_vehicle';
+    window.CALIBR8_UI?.closeConnections();
+    try{resetVehicleView();renderConnections();renderFleet();populateConnectionFilter();populateVehicleSelect();}catch(error){console.warn('Signed-out view cleanup:',error.message);}
+    return;
+  }
+  // Show the authenticated workspace before fleet requests or widget rendering.
+  document.body.classList.add('workspace-authenticated');$('authGate').classList.add('hidden');
+  $('authStatus').textContent=user.email||'Authenticated user';$('accountInitial').textContent=(user.email||'U').slice(0,1).toUpperCase();
+  $('signOutBtn').style.display='inline-block';$('authMessage').textContent='';
+  if(workspaceOwnerId===user.id&&(initialized||workspaceLoad||workspaceInitTimer))return;
+  const ownerId=user.id,revision=++authRevision;
+  workspaceOwnerId=ownerId;initialized=false;$('firestoreStatus').textContent='Loading workspace';
+  clearTimeout(workspaceInitTimer);
+  workspaceInitTimer=setTimeout(()=>{
+    workspaceInitTimer=null;
+    if(!sessionIsCurrent(revision,ownerId))return;
+    workspaceLoad=initializeWorkspace(revision,ownerId).catch(error=>{
+      if(sessionIsCurrent(revision,ownerId)){
+        $('firestoreStatus').textContent='Workspace data unavailable';
+        window.CALIBR8_UI?.toast('Signed in. Some workspace data could not load: '+error.message);
+      }
+    }).finally(()=>{if(sessionIsCurrent(revision,ownerId)){workspaceLoad=null;initialized=true;}});
+  },0);
+}
+async function initializeWorkspace(revision,ownerId){
+  try{await loadConnections();}
+  catch(error){if(sessionIsCurrent(revision,ownerId))window.CALIBR8_UI?.toast('Signed in. API connections could not load: '+error.message);}
+  if(!sessionIsCurrent(revision,ownerId))return;
+  await refreshFleet(true);
+  if(!sessionIsCurrent(revision,ownerId))return;
+  if(sourceMode==='fleet_api'){
+    const vehicle=state.fleet.find(v=>v.internal_vehicle_id===selectedVehicleId)||state.fleet[0];
+    if(vehicle)selectFleetVehicle(vehicle);
+    else{$('liveText').textContent='ADD API';updateSourceUI();}
+  }else{switchToDemoVehicle();restartTimer();}
+  try{map?.invalidateSize();window.telemetryChart?.resize?.();}catch(error){console.warn('Widget resize:',error.message);}
+}
+
+// Register before initializing optional visual widgets or reading stored sessions.
+supabase.auth.onAuthStateChange((_event,nextSession)=>{
+  const signal=++authSignal;
+  setTimeout(()=>{if(signal===authSignal)handleSession(nextSession);},0);
+});
+const restoreSignal=authSignal;
+supabase.auth.getSession().then(({data,error})=>{
+  if(restoreSignal!==authSignal)return;
+  if(error)throw error;
+  handleSession(data?.session||null);
+}).catch(error=>{
+  if(restoreSignal===authSignal){handleSession(null);authProblem(error,'Could not restore your session. Please sign in again.');}
+});
+
+// An unavailable map/chart must not interrupt authentication or screen changes.
+try{initMap();}catch(error){map=routeLine=carMarker=null;$('map').textContent='Map could not load. GPS coordinates remain available.';console.warn('Map initialization:',error.message);}
+try{initChart();}catch(error){window.telemetryChart=null;console.warn('Chart initialization:',error.message);}
+try{resetVehicleView();updateSourceUI();}catch(error){console.warn('Dashboard initialization:',error.message);}

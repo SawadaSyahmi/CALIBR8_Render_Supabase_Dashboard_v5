@@ -1,6 +1,6 @@
-# Deploy CALIBR8 v5.2 — Render + Supabase
+# Deploy CALIBR8 v5.2.1 — Render + Supabase
 
-For an existing deployment, follow `UI_REDESIGN.md`. For a new deployment, follow the steps below.
+For the sign-in patch to an existing deployment, follow `LOGIN_FIX.md`. For the full UI update, follow `UI_REDESIGN.md`. For a new deployment, follow the steps below.
 
 ## Part A — Create Supabase
 

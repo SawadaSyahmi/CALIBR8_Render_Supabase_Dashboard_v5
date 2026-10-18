@@ -1,6 +1,6 @@
-# CALIBR8 Render + Supabase Dashboard v5.2
+# CALIBR8 Render + Supabase Dashboard v5.2.1
 
-This edition includes the professional dark/light interface and the measurement display fix. Read `UI_REDESIGN.md` to update an existing deployment. Open `UI_PREVIEW.html` for a self-contained design preview.
+This edition includes the sign-in screen fix, professional dark/light interface and measurement display fix. Read `LOGIN_FIX.md` to apply the login patch to an existing deployment. Read `UI_REDESIGN.md` to update an existing deployment. Open `UI_PREVIEW.html` for a self-contained design preview.
 
 The dashboard has Live monitoring, Fleet, Safety events and Models & physics views, with remembered Light/Dark/Auto themes and responsive navigation. Measurement cards update directly from API responses, with Realtime updates and authenticated state reads for history and fallback.
 
