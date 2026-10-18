@@ -1,6 +1,6 @@
-# Deploy CALIBR8 v5 for Free — Render + Supabase
+# Deploy CALIBR8 v5.2 — Render + Supabase
 
-This deployment does not use Firebase, Cloud Run, or a Google billing account.
+For an existing deployment, follow `UI_REDESIGN.md`. For a new deployment, follow the steps below.
 
 ## Part A — Create Supabase
 
@@ -127,4 +127,4 @@ SUPABASE_SERVICE_ROLE_KEY
 ```
 
 ### Login works but realtime does not
-Run `supabase_schema.sql` again and confirm `live_state`, `route_points`, `events`, and `fleet` are included in the `supabase_realtime` publication.
+Measurements in v5.1 also update directly from API responses. The `/api/state` fallback restores history and supports push monitoring. To restore Realtime too, run `supabase_schema.sql` again and confirm `live_state`, `route_points`, `events`, and `fleet` are included in the `supabase_realtime` publication.

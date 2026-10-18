@@ -1,6 +1,8 @@
-# CALIBR8 Render + Supabase Dashboard v5
+# CALIBR8 Render + Supabase Dashboard v5.2
 
-This edition removes Firebase and Google Cloud billing requirements.
+This edition includes the professional dark/light interface and the measurement display fix. Read `UI_REDESIGN.md` to update an existing deployment. Open `UI_PREVIEW.html` for a self-contained design preview.
+
+The dashboard has Live monitoring, Fleet, Safety events and Models & physics views, with remembered Light/Dark/Auto themes and responsive navigation. Measurement cards update directly from API responses, with Realtime updates and authenticated state reads for history and fallback.
 
 ## Architecture
 
@@ -9,8 +11,10 @@ This edition removes Firebase and Google Cloud billing requirements.
 - **OpenStreetMap + Leaflet**: route visualization.
 - **CALIBR8 models**: XGBoost + LightGBM ensemble, Friend GBM, and the physics engine run in Python on Render.
 
-## What is retained from v4
+## Features
 
+- Light, Dark and Auto themes across the workspace and sign-in screen.
+- Four navigation views, fleet/event search and responsive mobile navigation.
 - One organization/customer workspace.
 - Multiple customer live API connections.
 - Automatic vehicle discovery from each API.

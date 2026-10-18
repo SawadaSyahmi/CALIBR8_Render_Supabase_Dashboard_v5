@@ -103,3 +103,10 @@ POST /api/ingest/context?vehicle_id=<id>
 ```http
 GET /api/export/events.csv?vehicle_id=<id>&trip_id=<trip_id>
 ```
+
+
+## Dashboard response and state fallback (v5.1)
+
+Replay, fleet-monitoring, demo, sync and inference responses include `vehicle_id`, `telemetry`, `gps`, `context`, `physics`, `inference`, `model_comparison`, `trip`, `route_point` and `event`. The latter two may be null. The UI renders these responses immediately.
+
+`GET /api/state?vehicle_id=<id>` requires the same Bearer authentication as the dashboard APIs. It returns `vehicle_id`, `live` (the stored telemetry, GPS, context, trip, inference and raw-source values), `route_points` (latest 500, chronological) and `events` (latest 50). It reads the selected vehicle and active trip only. It does not return connection credentials.

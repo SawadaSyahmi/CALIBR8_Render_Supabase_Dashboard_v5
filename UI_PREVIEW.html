@@ -1,0 +1,739 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#10151e" id="browserThemeColor">
+<meta name="color-scheme" content="dark light">
+<title>CALIBR8 · Dark & Light UI Preview</title>
+<script>(function(){try{var p=localStorage.getItem('calibr8-theme')||'system';document.documentElement.dataset.theme=p==='light'||p==='dark'?p:(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');}catch(e){document.documentElement.dataset.theme='dark';}})();</script>
+
+<style>/* CALIBR8 5.2 · Shared component and semantic theme tokens. */
+:root,
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page:#10151e;--sidebar:#0c1119;--panel:#171e29;--panel-raised:#1c2532;
+  --field:#111822;--hover:#202b3a;--text:#edf2f8;--muted:#9aa9bc;--subtle:#7d8da3;
+  --line:#293444;--line-soft:#222d3b;--accent:#52d8bd;--accent-strong:#6ce6cd;
+  --accent-text:#071e1a;--accent-soft:#17362f;--positive:#69d5a5;--positive-bg:#19362d;
+  --warning:#f4c573;--warning-bg:#30291e;--danger:#ff9199;--danger-bg:#3b222b;
+  --chart-grid:#2a3545;--chart-speed:#52d8bd;--chart-decel:#f2b76b;
+  --gauge-track:#2c3849;--overlay:rgba(4,8,14,.75);--shadow:0 8px 24px rgba(0,0,0,.12);
+  --route:#20bfa6;--json-bg:#101720;--sidebar-active:#17352f;--map-bg:#131e2a;
+}
+:root[data-theme="light"] {
+  color-scheme:light;
+  --page:#f4f6f8;--sidebar:#fcfdfd;--panel:#ffffff;--panel-raised:#f7f9fb;
+  --field:#ffffff;--hover:#f0f4f6;--text:#182331;--muted:#5e6f83;--subtle:#6c7c8d;
+  --line:#dce3e9;--line-soft:#e9edf1;--accent:#087e6b;--accent-strong:#076d5d;
+  --accent-text:#ffffff;--accent-soft:#e7f5f0;--positive:#15734f;--positive-bg:#e9f6ee;
+  --warning:#86520a;--warning-bg:#fff6e8;--danger:#b7394c;--danger-bg:#fff0f2;
+  --chart-grid:#e8edf2;--chart-speed:#07836f;--chart-decel:#b7681a;
+  --gauge-track:#e6edf1;--overlay:rgba(18,29,42,.42);--shadow:0 6px 20px rgba(22,38,54,.04);
+  --route:#078c77;--json-bg:#f5f7fa;--sidebar-active:#e7f4ee;--map-bg:#e9eff2;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:84px}
+body{margin:0;background:var(--page);color:var(--text);font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:13px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit}
+button,a,input,select,textarea{touch-action:manipulation}
+button,a{-webkit-tap-highlight-color:transparent}
+button{cursor:pointer}
+button:disabled{cursor:default;opacity:.42}
+button:focus-visible,a:focus-visible,summary:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+input,select,textarea{color:var(--text);background:var(--field);border:1px solid var(--line);border-radius:7px;min-width:0;padding:10px 12px;outline:none;transition:border-color .15s}
+input:hover,select:hover,textarea:hover{border-color:var(--subtle)}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 12%,transparent)}
+input::placeholder,textarea::placeholder{color:var(--subtle);opacity:1}
+select{height:41px;padding-right:30px;width:100%;text-overflow:ellipsis}
+option{background:var(--panel);color:var(--text)}
+input[type="checkbox"]{accent-color:var(--accent);width:15px;height:15px;margin:0;flex-shrink:0;box-shadow:none}
+a{color:inherit;text-decoration:none}
+svg{display:block;flex-shrink:0}
+.icon{width:19px;height:19px;vertical-align:middle;flex:none}
+h1,h2,h3,p{margin:0}
+h1{font-size:28px;line-height:1.25;font-weight:650;letter-spacing:-.8px}
+h2{font-size:16px;font-weight:620;line-height:1.4;letter-spacing:-.2px}
+h3{font-size:14px;font-weight:600;line-height:1.4}
+.hidden,[hidden]{display:none!important}
+.muted{color:var(--muted)}
+.small-text{font-size:11px}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.skip-link{position:fixed;top:-70px;left:240px;z-index:1000;background:var(--accent);color:var(--accent-text);padding:10px 18px;border-radius:6px}
+.skip-link:focus{top:12px}
+.app-layout{min-height:100vh}
+.sidebar{position:fixed;inset:0 auto 0 0;z-index:55;width:218px;background:var(--sidebar);border-right:1px solid var(--line-soft);padding:28px 16px 0;display:flex;flex-direction:column}
+.brand{display:flex;align-items:center;gap:10px;padding:0 8px;width:max-content}
+.brand-mark{width:34px;height:38px;display:grid;place-items:center;color:var(--accent)}
+.brand-mark svg{width:34px;height:34px}
+.brand-name{font-size:24px;line-height:1;font-weight:750;letter-spacing:1.1px}
+.brand-name>span{color:var(--accent)}
+.brand-name small{display:block;color:var(--muted);font-size:7.1px;letter-spacing:2.25px;line-height:1;margin-top:7px;font-weight:600}
+.workspace-card{display:flex;gap:10px;align-items:center;padding:12px 9px;margin:31px 0 27px;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
+.workspace-avatar,.account-avatar{display:grid;place-items:center;flex:none;width:30px;height:30px;background:var(--accent-soft);border:1px solid color-mix(in srgb,var(--accent) 18%,var(--line));color:var(--accent);border-radius:7px;font-size:12px;font-weight:650}
+.workspace-card>div{display:flex;flex-direction:column;min-width:0;gap:2px}
+.workspace-card strong{font-size:11px;font-weight:620}
+.workspace-card>div>span{font-size:10px;color:var(--muted)}
+.workspace-dot{width:5px;height:5px;border-radius:50%;background:var(--positive);margin-left:auto}
+.nav-label{font-size:9px;font-weight:650;letter-spacing:1.6px;color:var(--subtle);padding:0 12px;margin:0 0 9px}
+.nav-label-second{margin-top:29px}
+.side-nav{display:flex;flex-direction:column;gap:5px}
+.nav-item{display:flex;align-items:center;gap:11px;border:0;background:transparent;color:var(--muted);width:100%;text-align:left;min-height:43px;padding:11px 12px;border-radius:7px;font-size:12px;white-space:nowrap}
+.nav-item .icon{width:17px;height:17px}
+.nav-item:hover{color:var(--text);background:var(--hover)}
+.nav-item.active{color:var(--accent);background:var(--sidebar-active);font-weight:600}
+.nav-count{margin-left:auto;padding:1px 6px;min-width:20px;border-radius:5px;font-size:10px;background:var(--panel-raised);color:var(--muted)}
+.sidebar-bottom{margin-top:auto;padding-top:36px}
+.workspace-security{display:flex;align-items:center;gap:9px;padding:14px 8px 23px;color:var(--muted)}
+.workspace-security .icon{width:16px;height:16px;color:var(--accent)}
+.workspace-security strong,.workspace-security span{display:block;font-size:10px;font-weight:500}
+.workspace-security span{color:var(--subtle);font-size:9px;margin-top:3px}
+.account-block{display:flex;align-items:center;gap:9px;margin:0 -16px;padding:18px 14px;border-top:1px solid var(--line-soft)}
+.account-avatar{background:var(--panel-raised);color:var(--muted);border-color:var(--line);border-radius:50%}
+.account-details{min-width:0;flex:1}
+.account-details strong{display:block;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;font-size:10px;font-weight:550}
+.account-details span{font-size:9px;color:var(--subtle)}
+.workspace-main{margin-left:218px;min-width:0}
+.workspace-topbar{position:sticky;top:0;z-index:40;min-height:70px;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 30px;border-bottom:1px solid var(--line-soft);background:var(--page)}
+.breadcrumb{display:flex;align-items:center;gap:12px;font-size:11px;color:var(--muted);white-space:nowrap}
+.breadcrumb>.icon{width:12px;height:12px;color:var(--subtle)}
+.breadcrumb strong{font-weight:550;color:var(--text)}
+.topbar-tools{display:flex;align-items:center;gap:18px}
+.clock-label{font-size:10px;color:var(--subtle);font-variant-numeric:tabular-nums}
+.theme-switch{display:inline-flex;align-items:center;padding:3px;gap:2px;border:1px solid var(--line);border-radius:7px;background:var(--panel)}
+.theme-switch button{display:flex;align-items:center;justify-content:center;gap:5px;border:0;background:transparent;color:var(--muted);padding:5px 8px;border-radius:4px;font-size:10px;line-height:1.5;min-height:27px}
+.theme-switch .icon{width:13px;height:13px}
+.theme-switch button[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.theme-switch button:hover{color:var(--text)}
+.connection-pill{display:inline-flex;align-items:center;gap:7px;padding:6px 10px;border-radius:6px;background:var(--positive-bg);color:var(--positive);font-size:9px;letter-spacing:.5px;font-weight:650;white-space:nowrap}
+.pulse{width:6px;height:6px;background:currentColor;border-radius:50%;box-shadow:0 0 0 3px color-mix(in srgb,currentColor 10%,transparent)}
+.connection-pill[data-status="waiting"]{color:var(--muted);background:var(--panel-raised)}
+.connection-pill[data-status="warning"]{color:var(--warning);background:var(--warning-bg)}
+.menu-toggle{display:none!important}
+.page-content{max-width:1770px;margin:0 auto;padding:30px 30px 18px;outline:none}
+.page-heading{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:25px}
+.eyebrow{font-size:9px;letter-spacing:1.75px;color:var(--accent);font-weight:650;margin-bottom:8px}
+.page-heading p{color:var(--muted);font-size:12px;margin-top:8px}
+.page-actions,.fleet-actions,.payload-actions{display:flex;align-items:center;gap:9px}
+.button{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:39px;padding:10px 14px;line-height:1.2;border:1px solid var(--line);border-radius:7px;font-weight:550;font-size:11px;white-space:nowrap;background:var(--panel);color:var(--text);transition:background .15s,border-color .15s}
+.button .icon{width:15px;height:15px}
+.button:hover:not(:disabled){background:var(--hover);border-color:var(--subtle)}
+.button.primary,.button:not(.ghost):not(.danger):not(.auth-demo){background:var(--accent);color:var(--accent-text);border-color:var(--accent)}
+.button.primary:hover:not(:disabled),.button:not(.ghost):not(.danger):not(.auth-demo):hover:not(:disabled){background:var(--accent-strong);border-color:var(--accent-strong)}
+.button.danger{background:var(--danger-bg);border-color:color-mix(in srgb,var(--danger) 24%,var(--line));color:var(--danger)}
+.button.danger:hover:not(:disabled){border-color:var(--danger)}
+.button.small{min-height:34px;padding:8px 10px;font-size:10px;gap:6px}
+.icon-button{width:33px;height:33px;display:inline-flex;align-items:center;justify-content:center;padding:7px;border:1px solid transparent;background:transparent;color:var(--muted);border-radius:6px;flex:none}
+.icon-button:hover{background:var(--hover);color:var(--text)}
+.icon-button .icon{width:16px;height:16px}
+.text-button{display:inline-flex;align-items:center;gap:6px;color:var(--accent);border:0;background:transparent;font-size:10px;padding:3px 0;line-height:1.5}
+.text-button .icon{width:13px;height:13px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;min-width:0}
+.section-head{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:20px 22px 17px;min-height:76px}
+.card-kicker{font-size:8px;font-weight:650;color:var(--subtle);letter-spacing:1.4px;margin-bottom:5px}
+.section-description{font-size:11px;color:var(--muted);margin-top:6px}
+.section-head>.icon{color:var(--subtle)}
+.source-panel{margin-bottom:18px}
+.source-fields{display:flex;align-items:flex-end;gap:14px;padding:17px 20px 16px}
+.control-group{min-width:0;flex:1}
+.control-group label{display:block;color:var(--muted);font-weight:550;font-size:10px;margin-bottom:7px;line-height:1.3}
+.control-group.vehicle-control{flex:1.4}
+.control-group.source-control{flex:1;max-width:240px;min-width:190px}
+.connect-source{height:41px}
+.source-summary{display:flex;align-items:center;justify-content:space-between;gap:20px;border-top:1px solid var(--line-soft);padding:10px 20px;min-height:39px}
+.source-note{display:flex;align-items:center;gap:7px;min-width:0;color:var(--muted);font-size:10px}
+.source-dot{width:5px;height:5px;background:var(--accent);border-radius:50%;flex-shrink:0}
+.source-panel[data-source="replay"] .source-dot,.source-panel[data-source="harsh_replay"] .source-dot,.source-panel[data-source="demo"] .source-dot{background:var(--warning)}
+.model-settings{display:flex;gap:22px;align-items:flex-end;border-top:1px solid var(--line-soft);padding:17px 20px;background:var(--panel-raised);border-radius:0 0 10px 10px}
+.model-settings .control-group{max-width:210px}
+.model-settings .model-control{max-width:330px;flex:1.6}
+.model-note{font-size:10px;line-height:1.7;color:var(--muted);max-width:300px;flex:1;align-self:center}
+.segmented{display:flex;padding:3px;border:1px solid var(--line);border-radius:7px;background:var(--field);min-height:41px;gap:3px}
+.seg{flex:1;white-space:nowrap;background:transparent;border:1px solid transparent;color:var(--muted);border-radius:4px;padding:7px 12px;font-size:10px;font-weight:550}
+.seg.active{background:var(--accent-soft);color:var(--accent);border-color:color-mix(in srgb,var(--accent) 22%,transparent)}
+.replay-control-bar{display:flex;align-items:center;gap:18px;flex-wrap:wrap;padding:13px 17px;margin-bottom:20px;border:1px solid color-mix(in srgb,var(--warning) 23%,var(--line));background:color-mix(in srgb,var(--warning-bg) 50%,var(--panel));border-radius:9px}
+.replay-status{display:flex;align-items:center;gap:9px;margin-right:auto;min-width:180px}
+.replay-icon{width:28px;height:28px;border:1px solid color-mix(in srgb,var(--warning) 20%,var(--line));border-radius:6px;display:grid;place-items:center;color:var(--warning);background:var(--warning-bg)}
+.replay-icon .icon{width:13px;height:13px}
+.replay-status>div{display:flex;flex-direction:column;gap:2px}
+.replay-status strong{font-size:11px;font-weight:600}
+.replay-status>div>span{font-size:9px;color:var(--muted);font-variant-numeric:tabular-nums}
+.sample-badge{color:var(--warning);font-size:7px;letter-spacing:1px;border:1px solid color-mix(in srgb,var(--warning) 22%,var(--line));padding:3px 5px;border-radius:4px;margin-left:4px;white-space:nowrap}
+.replay-actions{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.control-divider{height:19px;border-right:1px solid var(--line);margin:0 3px}
+.speed-control select{height:34px;width:94px;padding:6px 8px;font-size:10px}
+.gap-toggle{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:9px;white-space:nowrap;margin-left:auto}
+.metrics-row{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;margin-bottom:20px}
+.metric-card{background:var(--panel);border:1px solid var(--line);border-radius:9px;min-width:0;padding:16px 15px 15px}
+.metric-heading{display:flex;align-items:center;justify-content:space-between;gap:4px;color:var(--muted);font-size:10px;margin-bottom:15px;line-height:1.3}
+.metric-heading>.icon{width:15px;height:15px;color:var(--subtle)}
+.metric-value{display:flex;align-items:baseline;gap:5px;white-space:nowrap;min-height:35px;font-variant-numeric:tabular-nums;letter-spacing:-.5px}
+.metric-value b{font-size:27px;line-height:1.2;font-weight:620}
+.metric-value>span{font-size:10px;color:var(--muted);letter-spacing:0}
+.metric-caption{font-size:8px;color:var(--subtle);margin-top:9px;line-height:1.3}
+.events-metric.has-events .metric-value b{color:var(--danger)}
+.monitor-grid,.chart-grid{display:grid;grid-template-columns:minmax(0,1.8fr) minmax(310px,1fr);gap:18px;margin-bottom:20px}
+.map-card{overflow:hidden;display:flex;flex-direction:column}
+.legend{display:flex;align-items:center;gap:13px;font-size:9px;color:var(--muted);white-space:nowrap}
+.legend>span{display:flex;align-items:center;gap:5px}
+.dot{width:6px;height:6px;border-radius:50%;display:inline-block}
+.route-dot{background:var(--route)}
+.harsh-dot{background:var(--danger)}
+.map-container{position:relative;flex:1;min-height:318px;margin:0 13px;border:1px solid var(--line-soft);border-radius:7px;overflow:hidden;background:var(--map-bg)}
+#map{width:100%;height:100%;min-height:318px;z-index:1;background:var(--map-bg);font-family:inherit}
+.map-center-button{position:absolute;bottom:12px;right:12px;z-index:500;border:1px solid var(--line);background:var(--panel);color:var(--text);display:grid;place-items:center;width:34px;height:34px;border-radius:6px;box-shadow:var(--shadow)}
+.map-center-button .icon{width:17px;height:17px}
+.map-footer{display:flex;justify-content:space-between;gap:10px;padding:13px 20px;color:var(--muted);font-size:9px;line-height:1.4;font-variant-numeric:tabular-nums}
+.map-footer>span:first-child{display:flex;align-items:center;gap:5px}
+.map-footer .icon{width:12px;height:12px;color:var(--subtle)}
+.map-unavailable{height:318px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:var(--muted);padding:30px;text-align:center}
+.map-unavailable .icon{width:28px;height:28px;color:var(--accent)}
+.leaflet-tile-pane{transition:filter .2s}
+:root[data-theme="dark"] .leaflet-tile-pane{filter:invert(.92) hue-rotate(180deg) saturate(.55) brightness(.9) contrast(.9)}
+.leaflet-bar{border:1px solid var(--line)!important;box-shadow:var(--shadow)!important;border-radius:6px!important;overflow:hidden}
+.leaflet-bar a,.leaflet-control-zoom a{background:var(--panel)!important;color:var(--text)!important;border-color:var(--line)!important;width:30px!important;height:30px!important;line-height:30px!important;font-size:18px!important}
+.leaflet-control-attribution{background:color-mix(in srgb,var(--panel) 92%,transparent)!important;color:var(--muted)!important;font-size:8px!important}
+.leaflet-control-attribution a{color:var(--accent)!important}
+.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--panel)!important;color:var(--text)!important}
+.car-pin{display:grid;place-items:center;background:var(--accent);color:var(--accent-text);border:3px solid var(--panel);width:34px;height:34px;box-shadow:0 3px 12px #0004;border-radius:10px;transform:rotate(0deg)}
+.car-pin .icon{width:20px;height:20px}
+.risk-card{padding-bottom:17px;display:flex;flex-direction:column}
+.analysis-icon{display:grid;place-items:center;width:30px;height:30px;border-radius:7px;background:var(--accent-soft);color:var(--accent)}
+.analysis-icon .icon{width:16px;height:16px}
+.risk-main{display:flex;align-items:center;flex-direction:column;text-align:center;padding:2px 19px 17px;flex:1}
+.decision{display:inline-flex;align-items:center;justify-content:center;font-size:8px;font-weight:650;letter-spacing:.5px;padding:5px 10px;background:var(--panel-raised);color:var(--muted);border-radius:5px;line-height:1.2;min-height:23px}
+.decision.safe{background:var(--positive-bg);color:var(--positive)}
+.decision.harsh{background:var(--danger-bg);color:var(--danger)}
+.gauge-wrap{position:relative;width:220px;max-width:100%;height:146px;margin:7px auto 0}
+.gauge{position:absolute;width:100%;top:0;left:0}
+.gauge-bg,.gauge-value{fill:none;stroke-width:11;stroke-linecap:round}
+.gauge-bg{stroke:var(--gauge-track)}
+.gauge-value{stroke:var(--accent);stroke-dasharray:0 100;transition:stroke-dasharray .25s,stroke .25s}
+.gauge-text{position:absolute;bottom:25px;left:0;right:0;display:flex;align-items:center;flex-direction:column;gap:3px}
+.gauge-text strong{font-size:34px;line-height:1.2;font-weight:620;letter-spacing:-1px;font-variant-numeric:tabular-nums}
+.gauge-text>span{font-size:9px;color:var(--muted)}
+.decision-panel h3{font-size:11px;font-weight:600;max-width:280px;margin:0 auto}
+.decision-panel p{font-size:10px;color:var(--muted);line-height:1.6;margin:7px auto 0;max-width:250px}
+.comparison-heading{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:12px 18px 9px;border-top:1px solid var(--line-soft);font-size:7px;font-weight:650;letter-spacing:1px;color:var(--subtle)}
+.comparison-heading .text-button{font-size:8px;font-weight:500;letter-spacing:0}
+.compare-mini{display:grid;grid-template-columns:1fr 1fr 1.1fr;padding:0 18px;gap:6px}
+.compare-mini>div{background:var(--panel-raised);border:1px solid var(--line-soft);border-radius:6px;padding:9px 8px;min-width:0}
+.compare-mini span{display:block;color:var(--muted);font-size:8px;margin-bottom:5px;white-space:nowrap}
+.compare-mini strong{display:block;font-size:12px;font-weight:600;line-height:1.4;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.compare-mini>div:last-child strong{font-size:10px;text-transform:capitalize}
+.chart-card{padding-bottom:18px}
+.chart-container{height:228px;padding:0 19px 0 14px;position:relative}
+.context-card .section-head{padding-bottom:9px}
+.context-grid{display:grid;grid-template-columns:1fr 1fr;gap:17px 16px;padding:12px 22px 20px}
+.context-grid>div{min-width:0}
+.context-grid span{display:block;font-size:9px;color:var(--muted);margin-bottom:5px}
+.context-grid strong{font-size:11px;font-weight:550;text-transform:capitalize;overflow-wrap:anywhere}
+.quality-note{font-size:9px;color:var(--subtle);padding:14px 22px;border-top:1px solid var(--line-soft)}
+.workspace-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:23px;padding:13px 0 0;border-top:1px solid var(--line-soft);font-size:9px;color:var(--subtle)}
+.workspace-footer>span:first-child{display:flex;align-items:center;gap:6px}
+.footer-dot{width:5px;height:5px;background:var(--accent);border-radius:50%}
+.footer-version{color:var(--subtle);opacity:.8;margin-left:3px}
+.fleet-panel{overflow:hidden}
+.fleet-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;padding:0 22px 22px}
+.fleet-card{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:16px;min-width:0}
+.fleet-card.active{border-color:var(--accent);background:color-mix(in srgb,var(--accent-soft) 28%,var(--panel))}
+.fleet-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.fleet-card-head strong{display:block;font-size:13px;font-weight:620;overflow-wrap:anywhere}
+.fleet-card-head>div>span{display:block;margin-top:4px;font-size:10px;color:var(--muted)}
+.status-online{font-size:8px;padding:3px 5px;border-radius:4px;color:var(--positive);background:var(--positive-bg);white-space:nowrap}
+.status-online.stale{color:var(--warning);background:var(--warning-bg)}
+.fleet-card-metrics{display:flex;gap:8px;justify-content:space-between;color:var(--muted);font-size:10px;margin:18px 0 15px;font-variant-numeric:tabular-nums}
+.fleet-card>.button{width:100%;min-height:34px;font-size:10px}
+.search-field{display:flex;align-items:center;gap:7px;border:1px solid var(--line);border-radius:7px;padding:0 10px;background:var(--field);min-width:0;width:195px;height:38px;color:var(--subtle)}
+.search-field .icon{width:14px;height:14px}
+.search-field input{border:0;box-shadow:none;background:transparent;padding:8px 0;width:100%;font-size:11px;min-width:0}
+.search-field:focus-within{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 10%,transparent)}
+.empty-fleet{grid-column:1/-1;padding:45px 20px;text-align:center;color:var(--muted);font-size:12px;background:var(--panel-raised);border:1px dashed var(--line);border-radius:8px}
+.empty-fleet p{margin-top:7px;color:var(--subtle);font-size:11px}
+.empty-fleet .button{margin-top:16px}
+.empty-view{padding:64px 24px;text-align:center;color:var(--muted)}
+.empty-view>.icon{width:36px;height:36px;margin:0 auto 20px;color:var(--accent)}
+.empty-view h2{color:var(--text);font-size:19px}
+.empty-view p{margin:10px auto 22px;max-width:370px}
+.events-card{overflow:hidden}
+.table-wrap{overflow:auto;max-width:100%;min-height:185px}
+table{border-collapse:collapse;width:100%;white-space:nowrap;text-align:left;font-variant-numeric:tabular-nums}
+th{background:var(--panel-raised);font-size:9px;font-weight:550;color:var(--muted);padding:12px 18px;border-top:1px solid var(--line-soft);border-bottom:1px solid var(--line)}
+td{font-size:10px;padding:15px 18px;border-bottom:1px solid var(--line-soft);color:var(--text)}
+tbody tr:hover td{background:var(--hover)}
+td.empty{text-align:center;color:var(--muted);padding:56px 16px;white-space:normal;font-size:12px}
+.table-footer{display:flex;justify-content:space-between;gap:16px;padding:13px 22px;border-top:1px solid var(--line-soft);font-size:9px;color:var(--subtle)}
+.probability-chip{display:inline-block;padding:3px 7px;border-radius:4px;background:var(--danger-bg);color:var(--danger);font-weight:600;font-size:10px}
+.insights-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:20px}
+.calc-table{padding:0 22px}
+.calc-table>div{display:flex;align-items:center;justify-content:space-between;gap:15px;min-height:43px;border-bottom:1px solid var(--line-soft);font-size:11px;color:var(--muted)}
+.calc-table>div:nth-last-child(2){background:var(--accent-soft);margin:5px -10px 0;padding:0 10px;border:0;border-radius:5px;color:var(--accent)}
+.calc-table strong{font-size:11px;font-weight:600;color:var(--text);white-space:nowrap;font-variant-numeric:tabular-nums}
+.info-note{display:flex;gap:10px;padding:19px 22px 21px;color:var(--muted);font-size:10px;line-height:1.7}
+.info-note .icon{width:15px;height:15px;color:var(--subtle);margin-top:2px}
+.equation-box{display:flex;flex-direction:column;padding:0 22px;gap:8px}
+.equation-box>span{font-size:9px;color:var(--muted)}
+.equation-box code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:11px;background:var(--panel-raised);padding:10px 12px;border:1px solid var(--line-soft);border-radius:5px;color:var(--text);line-height:1.8;overflow-wrap:anywhere;margin-bottom:3px}
+.band-row{display:grid;grid-template-columns:1fr 1fr;gap:9px 10px;padding:18px 22px;color:var(--muted);font-size:9px}
+.band-row>span{display:flex;align-items:center;gap:6px}
+.band-row i{width:5px;height:5px;border-radius:50%;background:var(--positive)}
+.band-row span:nth-child(2) i{background:var(--warning)}
+.band-row span:nth-child(3) i{background:#ed9a60}
+.band-row span:nth-child(4) i{background:var(--danger)}
+.submodel{font-size:10px;line-height:1.8;padding:15px 22px 20px;border-top:1px solid var(--line-soft);color:var(--muted)}
+.submodel b{font-weight:550;color:var(--text)}
+.api-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:20px}
+.api-card{display:flex;align-items:center;gap:10px;padding:15px 13px;background:var(--panel);border:1px solid var(--line);border-radius:8px;min-width:0}
+.api-icon{background:var(--accent-soft);color:var(--accent);width:30px;height:30px;display:grid;place-items:center;border-radius:6px;flex:none}
+.api-icon .icon{width:15px;height:15px}
+.api-card>div{display:flex;flex-direction:column;gap:4px;min-width:0}
+.api-card strong{font-size:10px;font-weight:550}
+.api-card div>span{font-size:8px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px}
+.api-card em{font-size:8px;font-style:normal;color:var(--positive);margin-left:auto;white-space:nowrap}
+.api-card.bad .api-icon{color:var(--danger);background:var(--danger-bg)}
+.api-card.bad em{color:var(--danger)}
+.source-details{overflow:hidden}
+summary{cursor:pointer;list-style:none}
+summary::-webkit-details-marker{display:none}
+.source-details>summary{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:18px 22px}
+.source-details>summary>div{display:flex;align-items:center;gap:12px}
+.source-details>summary .icon{width:17px;height:17px;color:var(--subtle)}
+.source-details>summary strong{display:block;font-size:12px;font-weight:600}
+.source-details>summary small{display:block;font-size:10px;color:var(--muted);margin-top:3px;font-weight:400}
+.source-details[open]>summary>.icon{transform:rotate(90deg)}
+.replay-grid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);border-top:1px solid var(--line-soft)}
+.replay-grid:has(.harsh-output-card.hidden){grid-template-columns:1fr}
+.api-output-card,.harsh-output-card{min-width:0}
+.harsh-output-card{border-left:1px solid var(--line-soft)}
+.replay-grid .section-head{padding:16px 20px 11px;min-height:60px}
+.replay-meta{display:grid;grid-template-columns:1.2fr .7fr 1fr 1.2fr;gap:9px;padding:0 20px 15px}
+.replay-meta>div{min-width:0}
+.replay-meta span{display:block;font-size:8px;color:var(--muted);margin-bottom:5px}
+.replay-meta strong{font-size:9px;font-weight:550;overflow-wrap:anywhere}
+.small-badge{display:inline-flex;align-items:center;color:var(--muted);border:1px solid var(--line);background:var(--panel-raised);border-radius:5px;padding:4px 7px;font-size:8px;line-height:1.5;text-transform:capitalize;max-width:220px;overflow-wrap:anywhere}
+.json-output{font-family:ui-monospace,Consolas,monospace;font-size:10px;line-height:1.8;padding:15px;margin:0 20px 20px;background:var(--json-bg);border:1px solid var(--line-soft);border-radius:6px;max-height:330px;overflow:auto;color:var(--muted);white-space:pre-wrap;overflow-wrap:anywhere}
+.harsh-output-empty{padding:12px 20px 25px;color:var(--muted);line-height:1.8;font-size:11px}
+.harsh-event-box{padding:0 20px 20px}
+.harsh-event-box h4{font-size:11px;font-weight:550;color:var(--danger);margin:0 0 17px}
+.harsh-event-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.harsh-event-grid>div{padding:10px;border:1px solid var(--line);border-radius:6px;background:var(--panel-raised)}
+.harsh-event-grid span{display:block;font-size:8px;color:var(--muted);margin-bottom:4px}
+.harsh-event-grid strong{font-size:11px;font-weight:550}
+.modal-backdrop{position:fixed;inset:0;z-index:200;background:var(--overlay);display:flex;align-items:center;justify-content:center;padding:30px;backdrop-filter:blur(5px)}
+.modal-panel{background:var(--panel);border:1px solid var(--line);border-radius:13px;width:860px;max-width:100%;max-height:calc(100dvh - 60px);overflow:auto;box-shadow:0 24px 80px #0003}
+.modal-panel>.section-head{position:sticky;top:0;background:var(--panel);border-bottom:1px solid var(--line-soft);z-index:1;padding:22px 26px}
+.modal-panel .manager-help{font-size:12px;color:var(--muted);line-height:1.8;padding:20px 26px 0;max-width:740px}
+.connections-list{padding:18px 26px}
+.connections-list .empty-fleet{padding:20px;font-size:11px}
+.connection-row{display:grid;grid-template-columns:.8fr 1.2fr auto;gap:15px;padding:15px 0;border-bottom:1px solid var(--line-soft);align-items:center;min-width:0}
+.connection-row .meta{display:flex;flex-direction:column;gap:5px;min-width:0}
+.connection-row strong{font-size:11px;font-weight:600;overflow-wrap:anywhere}
+.connection-row .meta>span{font-size:9px;color:var(--muted);overflow-wrap:anywhere}
+.connection-row-actions{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.connection-row-actions .button{font-size:9px;padding:7px 9px}
+.connection-form{padding:0 26px 26px}
+.form-section-title{font-size:12px;font-weight:600;margin:12px 0 17px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:17px}
+.form-grid label{display:flex;flex-direction:column;gap:7px;color:var(--muted);font-size:10px;min-width:0}
+.form-grid input,.form-grid textarea,.form-grid select{width:100%;font-size:12px}
+.form-grid textarea{font-family:ui-monospace,Consolas,monospace;font-size:11px;resize:vertical}
+.form-grid small{font-size:9px;font-weight:400;color:var(--subtle)}
+.span-2{grid-column:1/-1}
+.connection-form details{margin-top:18px;border:1px solid var(--line);border-radius:7px}
+.connection-form summary{padding:13px 14px;font-size:11px;font-weight:550;color:var(--muted)}
+.connection-form summary:before{content:'+';display:inline-block;margin-right:9px;color:var(--accent)}
+.connection-form details[open] summary:before{content:'−'}
+.details-grid{padding:4px 14px 16px}
+.form-actions{display:flex;align-items:center;justify-content:flex-end;gap:9px;padding-top:22px}
+.enabled-check{display:flex;align-items:center;gap:7px;margin-right:auto;font-size:11px;color:var(--muted)}
+.form-status{font-size:11px;line-height:1.6;color:var(--muted);margin-top:13px;overflow-wrap:anywhere}
+.form-status:empty{display:none}
+.form-status.error{color:var(--danger);background:var(--danger-bg);border-radius:6px;padding:10px 12px}
+.form-status.success{color:var(--positive);background:var(--positive-bg);border-radius:6px;padding:10px 12px}
+body.modal-open{overflow:hidden}
+body:not(.workspace-authenticated)>.shell{visibility:hidden}
+.auth-gate{position:fixed;inset:0;z-index:180;display:grid;grid-template-columns:43% 57%;background:var(--page);overflow:auto}
+.auth-brand-panel{background:#0c191b;color:#edf6f3;position:relative;display:flex;flex-direction:column;padding:44px 50px;overflow:hidden;min-height:100dvh}
+.auth-brand-panel .brand-mark{color:#63d7bb}
+.auth-brand-panel .brand-name>span{color:#63d7bb}
+.auth-brand-panel .brand-name small{color:#9eb8b2}
+.auth-intro{margin:auto 0;padding:75px 0 90px;position:relative;z-index:1}
+.auth-eyebrow{color:#8dc7b8;font-size:8px;letter-spacing:2px;font-weight:550}
+.auth-intro h2{font-size:clamp(30px,3.2vw,51px);font-weight:540;letter-spacing:-1.5px;line-height:1.2;margin:21px 0 22px}
+.auth-intro p{color:#a8c1ba;font-size:12px;line-height:1.85;max-width:350px}
+.auth-brand-footer{font-size:9px;color:#91aaa4;position:relative;z-index:1}
+.auth-illustration{height:190px;position:relative;margin-top:45px;background-image:linear-gradient(#2c4b4330 1px,transparent 1px),linear-gradient(90deg,#2c4b4330 1px,transparent 1px);background-size:36px 36px;max-width:380px;border:1px solid #28473e60;border-radius:12px}
+.auth-route-line{position:absolute;left:40px;right:35px;top:43px;height:102px;border:2px solid #4cbaa0;border-left:0;border-bottom-right-radius:33px;border-top-right-radius:33px;transform:skewY(-8deg)}
+.auth-route-line:after{content:'';position:absolute;top:-21px;left:0;width:80px;height:62px;border:2px solid #4cbaa0;border-top:0;border-right:0;border-bottom-left-radius:23px;transform:translateY(-40px)}
+.route-node{position:absolute;width:9px;height:9px;background:#6be0c1;border:2px solid #0c191b;border-radius:50%;box-shadow:0 0 0 4px #4cbaa022}
+.node-one{top:21px;left:38px}.node-two{top:84px;right:31px}.node-three{bottom:31px;left:78px}
+.auth-floating-card{position:absolute;left:32px;right:28px;top:75px;display:flex;align-items:center;gap:12px;background:#162b27;border:1px solid #376151;padding:17px 20px;border-radius:8px;box-shadow:0 10px 20px #0002}
+.auth-floating-card>.icon{width:25px;height:25px;color:#80dbbf}
+.auth-floating-card strong{display:block;font-size:11px;font-weight:550}
+.auth-floating-card span{display:block;font-size:9px;color:#91b4a8;margin-top:3px}
+.auth-coordinate{position:absolute;bottom:10px;right:13px;font-size:7px;letter-spacing:1px;color:#6f9c8f}
+.auth-form-side{display:flex;align-items:center;justify-content:center;position:relative;padding:95px 40px 75px;min-height:100dvh}
+.auth-theme{position:absolute;top:32px;right:36px}
+.auth-card{width:100%;max-width:355px}
+.auth-lock{width:42px;height:42px;background:var(--accent-soft);border:1px solid color-mix(in srgb,var(--accent) 18%,var(--line));color:var(--accent);border-radius:11px;display:grid;place-items:center;margin-bottom:28px}
+.auth-lock .icon{width:20px;height:20px}
+.auth-card h1{font-size:31px;letter-spacing:-1px;margin-top:8px}
+.auth-card>p{font-size:12px;color:var(--muted);line-height:1.8;margin-top:12px;margin-bottom:30px;max-width:300px}
+.auth-card>label{display:block;color:var(--text);font-size:11px;font-weight:550;margin:17px 0 8px}
+.auth-card>input{width:100%;height:44px;font-size:12px}
+.password-field{position:relative}
+.password-field input{width:100%;height:44px;padding-right:43px;font-size:12px}
+.password-field .icon-button{position:absolute;right:5px;top:5px}
+.auth-actions{display:flex;gap:9px;margin-top:25px}
+.auth-actions .button{width:100%;min-height:44px;justify-content:space-between;padding:12px 15px;font-size:11px}
+.auth-access-note{border-top:1px solid var(--line);display:flex;align-items:flex-start;gap:8px;padding-top:22px;margin-top:27px;color:var(--muted);font-size:10px;line-height:1.6}
+.auth-access-note .icon{width:14px;height:14px;flex:none;margin-top:1px}
+.auth-demo{margin-top:17px;display:block;background:transparent;border:0;color:var(--accent);font-size:11px;padding:0}
+.auth-bottom-note{position:absolute;bottom:28px;left:30px;right:30px;text-align:center;font-size:9px;color:var(--subtle)}
+.toast-region{position:fixed;bottom:25px;left:calc(50% + 109px);transform:translateX(-50%);z-index:250;display:none;max-width:calc(100vw - 30px);padding:12px 18px;background:var(--panel-raised);border:1px solid var(--line);color:var(--text);box-shadow:var(--shadow);border-radius:8px;font-size:12px}
+.toast-region.visible{display:block}
+.sidebar-scrim{display:none}
+.preview-notice{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:18px;padding:10px 14px;border:1px solid color-mix(in srgb,var(--warning) 30%,var(--line));background:var(--warning-bg);color:var(--warning);font-size:10px;border-radius:7px}
+@media(min-width:1650px){.source-fields{gap:20px}.metric-card{padding:20px}.metric-value b{font-size:32px}.metric-heading{font-size:11px}.metric-caption{font-size:9px}.map-container,#map{min-height:370px}.gauge-wrap{margin-top:19px;margin-bottom:14px}.risk-main{padding-bottom:23px}.risk-card .section-head{min-height:80px}.chart-container{height:250px}}
+@media(max-width:1280px){.sidebar{width:196px;padding-left:12px;padding-right:12px}.account-block{margin:0 -12px;padding:17px 11px}.workspace-main{margin-left:196px}.workspace-topbar{padding-left:24px;padding-right:24px}.page-content{padding:25px 24px 18px}.topbar-tools{gap:13px}.clock-label{display:none}.metrics-row{gap:9px}.metric-card{padding:14px 11px}.metric-heading{font-size:9px}.metric-heading>.icon{width:13px;height:13px}.metric-value b{font-size:24px}.metric-value>span{font-size:8px}.metric-caption{font-size:7px}.monitor-grid,.chart-grid{grid-template-columns:minmax(0,1.5fr) minmax(290px,1fr);gap:15px}.section-head{padding:18px 18px 15px}.source-fields{gap:10px}.source-summary{gap:10px}.source-note{font-size:9px}.sample-badge{display:none}.replay-control-bar{gap:12px}.gap-toggle{width:100%;margin-left:0;justify-content:flex-end}.replay-status{min-width:130px}.api-grid{grid-template-columns:1fr 1fr}.fleet-grid{grid-template-columns:1fr 1fr}.toast-region{left:calc(50% + 98px)}}
+@media(max-width:1060px){.source-fields{flex-wrap:wrap}.source-fields>.control-group.source-control{max-width:none;flex:1;min-width:170px}.source-fields>.control-group{min-width:180px}.connect-source{margin-left:auto}.metrics-row{grid-template-columns:repeat(3,minmax(0,1fr));gap:11px}.metric-card{padding:15px 17px}.metric-heading{font-size:11px;margin-bottom:12px}.metric-value b{font-size:27px}.metric-value>span{font-size:10px}.metric-caption{font-size:8px}.monitor-grid,.chart-grid{grid-template-columns:minmax(0,1fr)}.map-container,#map{min-height:335px}.risk-main{display:grid;grid-template-columns:190px 1fr;grid-template-rows:23px auto;text-align:left;padding:0 20px 17px;column-gap:23px;align-items:center}.risk-main>.decision{grid-column:2;justify-self:start;grid-row:1;align-self:end}.gauge-wrap{grid-column:1;grid-row:1/3;width:190px;height:122px;margin:0}.gauge-text{bottom:18px}.gauge-text strong{font-size:30px}.gauge-text>span{font-size:8px}.decision-panel{grid-column:2;grid-row:2}.decision-panel h3,.decision-panel p{margin-left:0;max-width:none}.compare-mini{grid-template-columns:1fr 1fr 1fr}.compare-mini>div{padding:10px 12px}.compare-mini strong{font-size:14px}.context-grid{grid-template-columns:repeat(3,1fr);gap:20px}.context-card .section-head{padding-bottom:8px}.chart-container{height:230px}.insights-grid{grid-template-columns:1fr}.replay-grid{grid-template-columns:1fr}.harsh-output-card{border-top:1px solid var(--line-soft);border-left:0}.model-settings{flex-wrap:wrap}.model-note{flex-basis:100%;max-width:none}.auth-brand-panel{padding:35px}.auth-intro h2{font-size:36px}.auth-intro p{font-size:11px}.auth-floating-card{padding:15px;left:18px;right:18px}.connection-row{grid-template-columns:1fr auto}.connection-row .meta:nth-child(2){grid-column:1;grid-row:2}.connection-row-actions{grid-column:2;grid-row:1/3}}
+@media(max-width:760px){.sidebar{width:230px;transform:translateX(-100%);transition:transform .2s;z-index:120;padding-top:25px}.sidebar.open{transform:translateX(0)}.sidebar-scrim:not(.hidden){display:block;position:fixed;inset:0;background:var(--overlay);z-index:110}.workspace-main{margin-left:0}.workspace-topbar{padding:12px 18px;min-height:62px}.menu-toggle{display:inline-flex!important;margin-left:-6px}.breadcrumb{gap:8px}.breadcrumb>span,.breadcrumb>.icon{display:none}.topbar-tools{gap:10px}.topbar-tools .theme-switch button span{display:none}.theme-switch button{padding:5px 7px}.connection-pill{font-size:8px;padding:6px 8px;max-width:112px;overflow:hidden}.page-content{padding:22px 18px 16px}.page-heading{align-items:flex-start;gap:12px;margin-bottom:20px}h1{font-size:25px}.page-heading p{font-size:11px;max-width:230px}.page-actions{gap:6px;align-self:center}.page-actions .button{min-width:34px;padding:9px}.page-actions .button span{display:none}.page-actions .button .icon{width:15px;height:15px}.eyebrow{font-size:8px;letter-spacing:1.4px}.source-fields{padding:15px;gap:12px}.source-fields>.control-group{flex-basis:calc(50% - 6px);min-width:0}.source-fields>.control-group.source-control{min-width:0;max-width:none}.control-group.vehicle-control{flex-grow:1}.connect-source{height:35px;min-height:35px;font-size:10px;width:100%;background:var(--panel-raised)}.source-summary{padding:10px 15px;gap:10px;align-items:flex-start}.source-note{font-size:9px;line-height:1.6;align-items:flex-start}.source-dot{margin-top:5px}.source-summary>.text-button{white-space:nowrap;font-size:9px}.model-settings{padding:15px;gap:14px}.model-settings .control-group,.model-settings .model-control{max-width:none;flex-basis:100%}.replay-control-bar{padding:13px;gap:14px}.replay-status{min-width:0;flex:1}.replay-actions{width:100%;gap:6px}.replay-actions>.button.small{font-size:9px;padding:8px}.replay-actions>.button.small .icon{width:13px;height:13px}.replay-actions #injectHarshBtn{margin-left:auto}.replay-actions .control-divider{display:none}.speed-control select{font-size:9px;width:82px}.gap-toggle{justify-content:flex-start;font-size:9px}.metrics-row{grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-bottom:16px}.metric-card{padding:13px 12px}.metric-heading{font-size:9px;margin-bottom:11px;align-items:flex-start}.metric-heading>.icon{display:none}.metric-value b{font-size:24px}.metric-value>span{font-size:8px}.metric-caption{font-size:7px;margin-top:8px}.monitor-grid,.chart-grid{gap:16px;margin-bottom:16px}.section-head{padding:17px 17px 15px;gap:10px;min-height:69px}.card-kicker{font-size:7px;letter-spacing:1.3px}.section-head h2{font-size:15px}.legend{font-size:8px;gap:10px}.map-container{margin:0 10px}.map-container,#map{min-height:300px}.map-footer{padding:12px 15px;font-size:8px}.context-grid{padding:11px 17px 18px;gap:18px}.context-grid strong{font-size:10px}.quality-note{padding:12px 17px;font-size:9px}.workspace-footer{flex-wrap:wrap;font-size:8px;margin-top:19px;gap:10px}.workspace-footer>span:nth-child(2){order:3;flex-basis:100%}.workspace-footer>span:last-child{margin-left:auto}.fleet-panel .section-head,.events-card .section-head{flex-wrap:wrap;align-items:flex-start}.fleet-actions{width:100%;justify-content:space-between;margin-top:7px}.fleet-actions .search-field{flex:1}.fleet-actions .button{font-size:10px}.fleet-grid{padding:4px 17px 17px;gap:11px}.search-field{height:36px}.events-card .search-field{width:100%;margin-top:5px}.insights-grid{gap:16px;margin-bottom:16px}.api-grid{gap:10px;margin-bottom:16px}.api-card{padding:12px 10px;gap:7px}.api-icon{width:25px;height:25px}.api-icon .icon{width:13px;height:13px}.api-card strong{font-size:9px}.api-card div>span{font-size:7px;max-width:100px}.api-card em{display:none}.source-details>summary{padding:17px}.source-details>summary strong{font-size:11px}.source-details>summary small{font-size:9px}.calc-table{padding:0 17px}.calc-table>div{font-size:10px}.calc-table strong{font-size:10px}.equation-box{padding:0 17px}.equation-box code{font-size:10px}.info-note{padding:17px;font-size:9px}.modal-backdrop{padding:12px}.modal-panel{max-height:calc(100dvh - 24px);border-radius:10px}.modal-panel>.section-head{padding:18px}.modal-panel .manager-help{padding:18px 18px 0;font-size:11px}.connections-list{padding:16px 18px}.connection-form{padding:0 18px 20px}.form-grid{gap:15px}.form-grid label{font-size:10px}.form-actions{flex-wrap:wrap}.form-actions .enabled-check{flex-basis:100%;margin-bottom:8px}.auth-gate{display:flex}.auth-brand-panel{display:none}.auth-form-side{width:100%;min-height:100dvh;padding:110px 28px 80px}.auth-theme{top:24px;right:24px}.auth-card{max-width:365px}.auth-card h1{font-size:31px}.auth-bottom-note{font-size:9px}.toast-region{left:50%;bottom:20px}.skip-link{left:18px}}
+@media(max-width:410px){.page-content{padding-left:13px;padding-right:13px}.workspace-topbar{padding-left:13px;padding-right:13px}.breadcrumb strong{font-size:10px}.topbar-tools{gap:7px}.connection-pill{font-size:7px;gap:5px;max-width:105px}.theme-switch button{padding:4px 5px;min-height:25px}.theme-switch .icon{width:12px;height:12px}.page-heading p{max-width:210px}.metrics-row{gap:7px}.metric-card{padding:12px 9px}.metric-heading{font-size:8px}.metric-value b{font-size:22px}.metric-value>span{font-size:7px}.metric-value{gap:3px}.metric-caption{font-size:6.5px}.replay-actions #restartReplayBtn span{display:none}.replay-actions .button{gap:4px}.replay-actions #injectHarshBtn{margin-left:0;flex:1}.risk-main{grid-template-columns:155px 1fr;column-gap:10px;padding-left:12px;padding-right:12px}.gauge-wrap{width:155px;height:111px}.gauge-text{bottom:24px}.gauge-text strong{font-size:26px}.gauge-text>span{font-size:7px}.decision-panel h3{font-size:10px}.decision-panel p{font-size:9px}.compare-mini{padding:0 12px;gap:5px}.compare-mini>div{padding:9px 6px}.compare-mini span{font-size:7px}.compare-mini strong{font-size:12px}.compare-mini>div:last-child strong{font-size:9px}.comparison-heading{padding-left:13px;padding-right:13px}.fleet-grid{grid-template-columns:1fr}.form-grid{grid-template-columns:1fr}.replay-meta{grid-template-columns:1fr 1fr;gap:14px}.connection-row{grid-template-columns:1fr}.connection-row-actions{grid-column:1;grid-row:3}.context-grid{gap:17px 12px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*:before,*:after{transition:none!important;animation:none!important}}
+/* Readable labels at normal browser zoom. */
+.nav-item{font-size:13px}.workspace-card strong{font-size:12px}.workspace-card>div>span{font-size:10px}
+.breadcrumb{font-size:12px}.theme-switch button{font-size:11px}.page-heading p{font-size:13px}
+.button{font-size:12px}.control-group label{font-size:11px}.source-note{font-size:11px}.source-summary>.text-button{font-size:11px}
+.card-kicker{font-size:9px}.metric-heading{font-size:11px}.metric-caption{font-size:10px}.metric-value>span{font-size:11px}
+.decision{font-size:10px}.decision-panel h3{font-size:12px}.decision-panel p{font-size:11px}.gauge-text>span{font-size:10px}
+.compare-mini span{font-size:9px}.context-grid span{font-size:11px}.context-grid strong{font-size:12px}.quality-note{font-size:10px}
+.legend{font-size:10px}.map-footer{font-size:10px}.small-badge{font-size:10px}.section-description{font-size:12px}
+.fleet-card-metrics{font-size:11px}.fleet-card>.button{font-size:11px}th{font-size:10px}td{font-size:11px}
+.form-grid label{font-size:11px}.connection-form summary{font-size:12px}.info-note{font-size:11px}.source-details>summary small{font-size:11px}
+:root[data-theme="light"]{--subtle:#637489}
+@media(max-width:1280px){.source-note,.source-summary>.text-button{font-size:10px}.metric-heading{font-size:10px}.metric-caption{font-size:9px}.metric-value>span{font-size:10px}}
+@media(max-width:760px){.nav-item{font-size:13px}.page-heading p{font-size:12px}.source-note,.source-summary>.text-button{font-size:10px}.card-kicker{font-size:9px}.metric-heading{font-size:10px}.metric-caption{font-size:9px}.metric-value>span{font-size:9px}.decision-panel h3{font-size:11px}.decision-panel p{font-size:11px}.gauge-text>span{font-size:9px}.compare-mini span{font-size:9px}.map-footer{font-size:9px}.context-grid strong{font-size:12px}.context-grid span{font-size:10px}.source-summary{flex-wrap:wrap}.source-summary>.text-button{margin-left:auto}.small-badge{font-size:9px}.replay-status>div>span{font-size:10px}.replay-actions>.button.small{font-size:10px}.source-fields .button{font-size:11px}}
+@media(max-width:410px){.metrics-row{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.metric-card{padding:15px 14px}.metric-heading{font-size:11px}.metric-value b{font-size:28px}.metric-value>span{font-size:10px}.metric-caption{font-size:9px}.legend{font-size:9px}.gauge-text>span{font-size:8px}.compare-mini span{font-size:8px}.decision-panel p{font-size:10px}}
+</style>
+
+</head>
+<body class="workspace-authenticated">
+<a class="skip-link" href="#mainContent">Skip to dashboard</a>
+<div class="app-layout shell">
+  <div class="sidebar-scrim hidden" id="sidebarScrim"></div>
+  <aside class="sidebar" id="sidebar" aria-label="Main navigation">
+    <a class="brand" href="#overview" aria-label="CALIBR8 home" data-view="overview"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 36 36"><path d="M25 9H15a9 9 0 0 0 0 18h10" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="square"/><path d="m22 13 6 5-6 5M13 18h14" fill="none" stroke="currentColor" stroke-width="3"/></svg></span><span class="brand-name">CALIBR<span>8</span><small>FLEET INTELLIGENCE</small></span></a>
+    <div class="workspace-card"><span class="workspace-avatar">C</span><div><strong>Fleet workspace</strong><span>Operations centre</span></div><span class="workspace-dot" title="Shared organization workspace"></span></div>
+    <div class="nav-label">WORKSPACE</div>
+    <nav class="side-nav"><button class="nav-item active" type="button" data-view="overview" aria-current=page><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span>Live monitoring</span></button><button class="nav-item " type="button" data-view="fleet" ><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 8 2-4h10l2 4M5 8h14a2 2 0 0 1 2 2v7H3v-7a2 2 0 0 1 2-2Z"/><path d="M3 17v3h4v-3m10 0v3h4v-3M6 12h2m8 0h2"/></svg><span>Fleet</span><span class=nav-count id=fleetCount>0</span></button><button class="nav-item " type="button" data-view="events" ><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6l8-3Z"/><path d="m8.5 11.5 2.5 2.5 4.5-5"/></svg><span>Safety events</span></button><button class="nav-item " type="button" data-view="insights" ><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12h4l3-8 6 16 3-8h4"/></svg><span>Models & physics</span></button></nav>
+    <div class="nav-label nav-label-second">MANAGE</div>
+    <button class="nav-item" id="manageApisBtn" type="button"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8 3 0 4m8-4v4M6 7h12v4a6 6 0 0 1-12 0V7Zm6 10v4"/></svg><span>API connections</span></button>
+    <div class="sidebar-bottom">
+      <div class="workspace-security"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V6a4 4 0 0 1 8 0v4"/></svg><div><strong>Authorized workspace</strong><span>Secure account access</span></div></div>
+      <div class="account-block"><span class="account-avatar" id="accountInitial">U</span><div class="account-details"><strong id="authStatus">Signed out</strong><span>Organization member</span></div><button id="signOutBtn" class="icon-button" type="button" aria-label="Sign out" title="Sign out"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4H4v16h5m5-12 4 4-4 4m-6-4h10"/></svg></button></div>
+    </div>
+  </aside>
+  <div class="workspace-main">
+    <header class="workspace-topbar">
+      <div class="breadcrumb"><button class="icon-button menu-toggle" id="menuToggle" type="button" aria-label="Open navigation" aria-expanded="false" aria-controls="sidebar"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button><span>Workspace</span><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg><strong id="breadcrumbTitle">Live monitoring</strong></div>
+      <div class="topbar-tools"><span class="clock-label" id="workspaceClock"></span><div class="theme-switch" role="group" aria-label="Appearance"><button type="button" data-theme-choice="light" aria-pressed="false" title="Light theme"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg><span>Light</span></button><button type="button" data-theme-choice="dark" aria-pressed="false" title="Dark theme"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 13A9 9 0 0 1 11 3a9 9 0 1 0 10 10Z"/></svg><span>Dark</span></button><button type="button" data-theme-choice="system" aria-pressed="false" title="Auto theme"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8m-4-4v4"/></svg><span>Auto</span></button></div><div class="connection-pill"><span class="pulse"></span><span id="liveText">CONNECTING</span></div></div>
+    </header>
+    <main class="page-content" id="mainContent" tabindex="-1">
+      <div class="preview-notice"><span><strong>Interface preview</strong> · Recorded sample readings, no live connection. Try the theme controls and navigation.</span><button class="button ghost small" id="previewLoginBtn" type="button">Sign-in screen</button></div><div class="page-heading"><div><div class="eyebrow">FLEET OPERATIONS</div><h1 id="pageTitle">Live monitoring</h1><p id="pageDescription">A clear view of your vehicle, route and braking safety.</p></div><div class="page-actions"><button id="resetBtn" class="button ghost" type="button"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9a9 9 0 1 1 1 9M3 3v6h6"/></svg><span>Reset trip</span></button><button id="exportBtn" class="button primary" type="button"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M4 16v4h16v-4"/></svg><span>Export CSV</span></button></div></div>
+      <section class="source-panel panel" aria-label="Monitoring configuration">
+        <div class="source-fields">
+          <div class="control-group source-control"><label for="sourceSelect">Data source</label><select id="sourceSelect"><option value="fleet_api">Live fleet APIs</option><option value="replay">Sample API replay</option><option value="harsh_replay">Replay + harsh event</option><option value="demo">Synthetic demo</option><option value="external">Legacy 3-API pull</option><option value="push">Device / API push</option></select></div>
+          <div class="control-group hidden" id="fleetConnectionControl"><label for="fleetConnectionSelect">Connection</label><select id="fleetConnectionSelect"><option value="all">All connections</option></select></div>
+          <div class="control-group vehicle-control hidden" id="fleetVehicleControl"><label for="fleetVehicleSelect">Vehicle to monitor</label><select id="fleetVehicleSelect"><option value="">Choose a vehicle</option></select></div>
+          <div class="control-group vehicle-control" id="scenarioControl"><label for="scenarioSelect">Replay route</label><select id="scenarioSelect"><option value="route_1">Route 1 · 075034653492</option><option value="route_2">Route 2 · 075034655158</option><option value="route_3">Route 3 · 075034664531</option></select></div>
+          <button class="button ghost connect-source" type="button" data-open-connections><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8 3 0 4m8-4v4M6 7h12v4a6 6 0 0 1-12 0V7Zm6 10v4"/></svg><span>Connections</span></button>
+        </div>
+        <div class="source-summary"><span class="source-note"><span class="source-dot"></span><span id="sourceCaption">Connect a fleet API to start monitoring.</span></span><button class="text-button" id="modelSettingsToggle" type="button" aria-expanded="false" aria-controls="modelSettings"><span id="activeModelLabel">CALIBR8-AI · Balanced</span><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button></div>
+        <div class="model-settings hidden" id="modelSettings"><div class="control-group model-control"><label>Inference model</label><div class="segmented" role="group" aria-label="Choose model"><button class="seg active" data-model="new_ai" aria-pressed="true">New CALIBR8-AI</button><button class="seg" data-model="friend_gbm" aria-pressed="false">Friend GBM</button></div></div><div class="control-group"><label for="modeSelect">Detection mode</label><select id="modeSelect"><option value="balanced">Balanced</option><option value="safety">Safety / high recall</option></select></div><p class="model-note" id="modelNote">XGBoost + LightGBM ensemble · balanced threshold</p></div>
+      </section>
+      <section class="replay-control-bar" id="replayControls" aria-label="Replay controls"><div class="replay-status"><span class="replay-icon"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8 4 12 8-12 8V4Z"/></svg></span><div><strong id="playbackStatus">Playing</strong><span id="nextTickText">Waiting for the next point</span></div><span class="sample-badge">RECORDED SAMPLE</span></div><div class="replay-actions"><button type="button" class="button primary small" id="startReplayBtn"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8 4 12 8-12 8V4Z"/></svg><span>Start</span></button><button type="button" class="button ghost small" id="pauseReplayBtn"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 4v16m8-16v16"/></svg><span>Pause</span></button><button type="button" class="button ghost small" id="restartReplayBtn" title="Restart replay"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9a9 9 0 1 1 1 9M3 3v6h6"/></svg><span>Restart</span></button><span class="control-divider"></span><label class="speed-control"><span class="sr-only">Playback speed</span><select id="playbackSpeed" aria-label="Playback speed"><option value="1">1× speed</option><option value="5" selected>5× speed</option><option value="10">10× speed</option><option value="30">30× speed</option></select></label><button type="button" class="button danger small" id="injectHarshBtn"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 2 21h20L12 3Z"/><path d="M12 9v5m0 3v.1"/></svg><span>Inject harsh event</span></button></div><label class="gap-toggle" for="compressGaps"><input type="checkbox" id="compressGaps" checked><span>Skip long source gaps</span></label></section>
+      <section class="view-panel" data-panel="overview" id="overviewView" aria-label="Live monitoring">
+        <div class="metrics-row"><article class="metric-card "><div class="metric-heading"><span>Current speed</span><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19a10 10 0 1 1 16 0M12 12l5-5M7 8l-1-1m6-3v2m7 2-1 1"/><circle cx="12" cy="12" r="1.5"/></svg></div><div class="metric-value"><b id="speed">—</b><span>km/h</span></div><div class="metric-caption">Latest vehicle reading</div></article><article class="metric-card "><div class="metric-heading"><span>Peak deceleration</span><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h5l4 7h7m-5-5 5 5-5 5M4 19h5"/></svg></div><div class="metric-value"><b id="peak">—</b><span>m/s²</span></div><div class="metric-caption">Current braking estimate</div></article><article class="metric-card "><div class="metric-heading"><span>Jerk</span><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12h4l3-8 6 16 3-8h4"/></svg></div><div class="metric-value"><b id="jerk">—</b><span>m/s³</span></div><div class="metric-caption">Rate of acceleration change</div></article><article class="metric-card "><div class="metric-heading"><span>Brake utilisation</span><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6l8-3Z"/><path d="m8.5 11.5 2.5 2.5 4.5-5"/></svg></div><div class="metric-value"><b id="util">—</b><span>%</span></div><div class="metric-caption">Available capacity used</div></article><article class="metric-card "><div class="metric-heading"><span>Trip distance</span><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="5" r="2"/><circle cx="19" cy="19" r="2"/><path d="M7 5h7a4 4 0 0 1 0 8h-4a3 3 0 0 0 0 6h7"/></svg></div><div class="metric-value"><b id="distance">—</b><span>km</span></div><div class="metric-caption">Distance this session</div></article><article class="metric-card events-metric"><div class="metric-heading"><span>Harsh events</span><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 2 21h20L12 3Z"/><path d="M12 9v5m0 3v.1"/></svg></div><div class="metric-value"><b id="harshCount">—</b><span></span></div><div class="metric-caption">Detected this session</div></article></div>
+        <div class="monitor-grid">
+          <article class="map-card panel"><div class="section-head"><div><div class="card-kicker">LIVE LOCATION</div><h2>Vehicle route</h2></div><div class="legend"><span><i class="dot route-dot"></i>Route</span><span><i class="dot harsh-dot"></i>Harsh event</span></div></div><div class="map-container"><div id="map" aria-label="Vehicle route map"></div><button class="map-center-button" id="centerMapBtn" type="button" title="Centre on vehicle" aria-label="Centre map on vehicle"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 0 1 14 0Z"/><circle cx="12" cy="10" r="2.5"/></svg></button></div><div class="map-footer"><span><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 0 1 14 0Z"/><circle cx="12" cy="10" r="2.5"/></svg><span id="coords">GPS: —</span></span><span id="routeInfo">0 route points</span></div></article>
+          <article class="risk-card panel"><div class="section-head"><div><div class="card-kicker">BRAKING ANALYSIS</div><h2>Safety assessment</h2></div><span class="analysis-icon"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6l8-3Z"/><path d="m8.5 11.5 2.5 2.5 4.5-5"/></svg></span></div><div class="risk-main"><span id="decisionBadge" class="decision">WAITING</span><div class="gauge-wrap"><svg viewBox="0 0 220 130" class="gauge" role="img" aria-label="Harsh braking probability"><path d="M25 110 A85 85 0 0 1 195 110" class="gauge-bg"/><path id="gaugeArc" d="M25 110 A85 85 0 0 1 195 110" class="gauge-value" pathLength="100"/></svg><div class="gauge-text"><strong id="riskPct">—</strong><span>Harsh-braking probability</span></div></div><div class="decision-panel"><h3 id="modelName">CALIBR8-AI</h3><p id="decisionText">Waiting for vehicle measurements.</p></div></div><div class="comparison-heading">MODEL COMPARISON<button class="text-button" type="button" data-view="insights">Details <svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M7 7h10v10"/></svg></button></div><div class="compare-mini"><div><span>CALIBR8-AI</span><strong id="newAiMini">—</strong></div><div><span>Friend GBM</span><strong id="friendMini">—</strong></div><div><span>Physics</span><strong id="physicsMini">—</strong></div></div></article>
+        </div>
+        <div class="chart-grid"><article class="chart-card panel"><div class="section-head"><div><div class="card-kicker">TELEMETRY</div><h2>Speed & braking</h2></div><span class="muted small-text">Latest 60 samples</span></div><div class="chart-container"><canvas id="telemetryChart" aria-label="Speed and peak deceleration history" role="img"></canvas></div></article><article class="context-card panel"><div class="section-head"><div><div class="card-kicker">DRIVING CONTEXT</div><h2>Conditions</h2></div><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12h4l3-8 6 16 3-8h4"/></svg></div><div class="context-grid"><div><span>Vehicle type</span><strong id="vehicle">—</strong></div><div><span>Road</span><strong id="road">—</strong></div><div><span>Traffic</span><strong id="traffic">—</strong></div><div><span>Weather</span><strong id="weather">—</strong></div><div><span>Surface</span><strong id="surface">—</strong></div><div><span>Road grade</span><strong id="grade">—</strong></div></div><div class="quality-note" id="qualityBadge">Waiting for data quality</div></article></div>
+      </section>
+      <section class="view-panel hidden" data-panel="fleet" id="fleetView" aria-label="Fleet">
+        <div class="fleet-panel panel hidden" id="fleetPanel"><div class="section-head"><div><div class="card-kicker">CONNECTED VEHICLES</div><h2>Your fleet</h2><p class="section-description" id="fleetSummary">0 APIs · 0 vehicles</p></div><div class="fleet-actions"><label class="search-field"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg><input id="fleetSearch" type="search" aria-label="Search fleet" placeholder="Find a vehicle…"></label><button class="button ghost" id="refreshFleetBtn" type="button"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9a9 9 0 1 1 1 9M3 3v6h6"/></svg><span>Refresh fleet</span></button></div></div><div class="fleet-grid" id="fleetGrid"><div class="empty-fleet">Connect a data provider to discover your vehicles.</div></div></div>
+        <div class="empty-view panel hidden" id="fleetUnavailable"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 8 2-4h10l2 4M5 8h14a2 2 0 0 1 2 2v7H3v-7a2 2 0 0 1 2-2Z"/><path d="M3 17v3h4v-3m10 0v3h4v-3M6 12h2m8 0h2"/></svg><h2>View your connected fleet</h2><p>Choose Live fleet APIs as the data source to discover and monitor vehicles.</p><button class="button primary" type="button" id="enableFleetBtn">Switch to live fleet APIs</button></div>
+      </section>
+      <section class="view-panel hidden" data-panel="events" id="eventsView" aria-label="Safety events"><article class="events-card panel"><div class="section-head"><div><div class="card-kicker">SAFETY LOG</div><h2>Harsh-braking events</h2><p class="section-description">Latest 50 events for the selected vehicle and trip.</p></div><label class="search-field"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg><input id="eventSearch" type="search" aria-label="Search safety events" placeholder="Search events…"></label></div><div class="table-wrap"><table><thead><tr><th>Time</th><th>Model</th><th>Probability</th><th>Speed</th><th>Peak decel.</th><th>Physics</th><th>Location</th></tr></thead><tbody id="eventRows"><tr><td colspan="7" class="empty">No harsh-braking events yet.</td></tr></tbody></table></div><div class="table-footer"><span id="eventCountLabel">0 events</span><span>Most recent first</span></div></article></section>
+      <section class="view-panel hidden" data-panel="insights" id="insightsView" aria-label="Models and physics"><div class="insights-grid"><article class="calculation-card panel"><div class="section-head"><div><div class="card-kicker">EXPLAINABLE PHYSICS</div><h2>Braking capacity</h2></div><span id="physicsLabel" class="small-badge">—</span></div><div class="calc-table"><div><span>Estimated friction, μ</span><strong id="mu">—</strong></div><div><span>Road angle, θ</span><strong id="angle">—</strong></div><div><span>Traction limit</span><strong id="traction">—</strong></div><div><span>Brake capability</span><strong id="capability">—</strong></div><div><span>Available deceleration</span><strong id="available">—</strong></div><div><span>Observed brake component</span><strong id="brakeObs">—</strong></div></div><div class="info-note"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10v.1"/></svg><p>Values use the vehicle profile and configured road conditions. GPS-derived braking is an estimate, rather than an accelerometer measurement.</p></div></article><article class="equations-card panel"><div class="section-head"><div><div class="card-kicker">MODEL EXPLANATION</div><h2>How the decision is made</h2></div></div><div class="equation-box"><span>Traction limit</span><code>a<sub>traction</sub> = μg cos(θ) + g sin(θ)</code><span>Available braking</span><code>a<sub>available</sub> = min(a<sub>traction</sub>, a<sub>capability</sub>)</code><span>Capacity used</span><code>u = a<sub>brake,observed</sub> / a<sub>available</sub></code></div><div class="band-row"><span><i></i>&lt;40% Normal</span><span><i></i>40–60% Mild</span><span><i></i>60–80% Harsh</span><span><i></i>≥80% Severe</span></div><div class="submodel" id="submodelInfo">Model details will appear after the first reading.</div></article></div>
+        <section class="api-grid" aria-label="Data pipeline status"><div class="api-card"><span class="api-icon"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12h4l3-8 6 16 3-8h4"/></svg></span><div><strong>Vehicle telemetry</strong><span id="telemetryStatus">Waiting for data</span></div><em id="telemetryLatency">—</em></div><div class="api-card"><span class="api-icon"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 0 1 14 0Z"/><circle cx="12" cy="10" r="2.5"/></svg></span><div><strong>GPS & route</strong><span id="gpsStatus">Waiting for data</span></div><em id="gpsLatency">—</em></div><div class="api-card"><span class="api-icon"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 8 2-4h10l2 4M5 8h14a2 2 0 0 1 2 2v7H3v-7a2 2 0 0 1 2-2Z"/><path d="M3 17v3h4v-3m10 0v3h4v-3M6 12h2m8 0h2"/></svg></span><div><strong>Driving context</strong><span id="contextStatus">Waiting for data</span></div><em id="contextLatency">—</em></div><div class="api-card"><span class="api-icon"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6l8-3Z"/><path d="m8.5 11.5 2.5 2.5 4.5-5"/></svg></span><div><strong>Model inference</strong><span id="inferenceStatus">Waiting for data</span></div><em id="inferenceLatency">—</em></div></section>
+        <details class="source-details panel"><summary><div><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8 6-6 6 6 6m8-12 6 6-6 6m-5-16-2 20"/></svg><span><strong>Source data & diagnostics</strong><small>Inspect the current payload and controlled test event.</small></span></div><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></summary><div class="replay-grid"><article class="api-output-card"><div class="section-head"><h3>Current API output</h3><div class="payload-actions"><span id="replayBadge" class="small-badge">waiting</span><button class="icon-button" id="copyPayloadBtn" type="button" title="Copy payload" aria-label="Copy API payload"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="13" rx="2"/><path d="M16 8V3H3v13h5"/></svg></button></div></div><div class="replay-meta"><div><span>Device</span><strong id="replayDevice">—</strong></div><div><span>Point</span><strong id="replayPoint">—</strong></div><div><span>Source interval</span><strong id="replayDelta">—</strong></div><div><span>Derived acceleration</span><strong id="replayAccel">—</strong></div></div><pre id="apiOutput" class="json-output">Waiting for source data…</pre></article><article class="harsh-output-card" id="harshOutputCard"><div class="section-head"><h3>Injected test event</h3><span id="harshReplayBadge" class="small-badge">not active</span></div><div id="harshOutput" class="harsh-output-empty">Use “Inject harsh event” to test the braking display.</div></article></div></details>
+      </section>
+      <footer class="workspace-footer"><span><i class="footer-dot"></i><span id="firestoreStatus">Waiting for connection</span></span><span id="updatedAt">Waiting for the first reading</span><span>CALIBR8 <span class="footer-version">/ 5.2</span></span></footer>
+    </main>
+  </div>
+</div>
+<div class="modal-backdrop hidden" id="apiManager">
+  <section class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="apiManagerTitle">
+    <div class="section-head"><div><div class="card-kicker">WORKSPACE SETTINGS</div><h3 id="apiManagerTitle">API connections</h3></div><button class="icon-button" id="closeApiManagerBtn" type="button" aria-label="Close connections"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6"/></svg></button></div>
+    <p class="manager-help">Connect your vehicle data provider, then discover and select the vehicles you want to monitor. Advanced field mapping is available below.</p>
+    <div id="connectionsList" class="connections-list"></div>
+    <form id="connectionForm" class="connection-form"><div class="form-section-title">Connection details</div>
+      <input type="hidden" id="connectionId">
+      <div class="form-grid">
+        <label><span>Connection name</span><input id="connectionName" required maxlength="80" placeholder="Fleet API - Klang"></label>
+        <label class="span-2"><span>API URL</span><input id="connectionUrl" required type="url" placeholder="https://provider.example.com/api/vehicles"></label>
+        <label class="span-2"><span>Request headers JSON <small>(optional; blank keeps saved headers when editing)</small></span><textarea id="connectionHeaders" rows="3" placeholder='{"Authorization":"Bearer ..."}'></textarea></label>
+      </div>
+      <details>
+        <summary>Field mapping & API format</summary>
+        <div class="form-grid details-grid">
+          <label><span>Root path</span><input id="rootPath" placeholder="data.items (blank = root)"></label>
+          <label><span>Device ID field</span><input id="mapDevice" value="deviceId"></label>
+          <label><span>Timestamp field</span><input id="mapTimestamp" value="dateTime"></label>
+          <label><span>Latitude field</span><input id="mapLat" value="latitude"></label>
+          <label><span>Longitude field</span><input id="mapLon" value="longitude"></label>
+          <label><span>Speed field</span><input id="mapSpeed" value="speed"></label>
+          <label><span>Direction field</span><input id="mapDirection" value="direction"></label>
+          <label><span>Timestamp format</span><select id="timestampFormat"><option value="epoch_seconds">Unix seconds</option><option value="epoch_milliseconds">Unix milliseconds</option><option value="iso">ISO date/time</option></select></label>
+          <label><span>Speed unit</span><select id="speedUnit"><option value="kmh">km/h</option><option value="mph">mph</option><option value="mps">m/s</option></select></label>
+          <label><span>Poll interval</span><select id="pollInterval"><option value="2">2 s</option><option value="5" selected>5 s</option><option value="10">10 s</option><option value="30">30 s</option><option value="60">60 s</option></select></label>
+        </div>
+      </details>
+      <details>
+        <summary>Default vehicle & driving context</summary>
+        <div class="form-grid details-grid">
+          <label><span>Vehicle type</span><select id="ctxVehicle"><option value="passenger_car">Passenger car</option><option value="van_mpv">Van / MPV</option><option value="pickup_4x4">Pickup 4x4</option><option value="small_lorry">Small lorry</option><option value="heavy_lorry">Heavy lorry</option><option value="bus">Bus</option></select></label>
+          <label><span>Road type</span><select id="ctxRoad"><option value="urban">Urban</option><option value="residential">Residential</option><option value="arterial">Arterial</option><option value="highway">Highway</option><option value="rural">Rural</option><option value="industrial">Industrial</option></select></label>
+          <label><span>Traffic</span><select id="ctxTraffic"><option value="medium">Medium</option><option value="low">Low</option><option value="high">High</option><option value="stop_go">Stop & go</option></select></label>
+          <label><span>Weather</span><select id="ctxWeather"><option value="clear">Clear</option><option value="cloudy">Cloudy</option><option value="light_rain">Light rain</option><option value="heavy_rain">Heavy rain</option><option value="fog">Fog</option></select></label>
+          <label><span>Road surface</span><select id="ctxSurface"><option value="dry_asphalt">Dry asphalt</option><option value="wet_asphalt">Wet asphalt</option><option value="rough_asphalt">Rough asphalt</option><option value="gravel">Gravel</option><option value="pothole_rough">Pothole / rough</option><option value="painted_marking">Painted marking</option></select></label>
+          <label><span>Road grade (%)</span><input id="ctxGrade" type="number" step="0.1" min="-20" max="20" value="0"></label>
+        </div>
+      </details>
+      <div class="form-actions"><label class="enabled-check"><input id="connectionEnabled" type="checkbox" checked> Enabled</label><button type="button" class="button ghost" id="clearConnectionFormBtn">New connection</button><button type="submit" class="button">Save connection</button></div>
+      <div id="connectionFormStatus" class="form-status"></div>
+    </form>
+  </section>
+</div>
+
+
+<div class="auth-gate hidden" id="authGate"><div class="auth-brand-panel"><a class="brand" href="#" aria-label="CALIBR8"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 36 36"><path d="M25 9H15a9 9 0 0 0 0 18h10" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="square"/><path d="m22 13 6 5-6 5M13 18h14" fill="none" stroke="currentColor" stroke-width="3"/></svg></span><span class="brand-name">CALIBR<span>8</span><small>FLEET INTELLIGENCE</small></span></a><div class="auth-intro"><span class="auth-eyebrow">FLEET INTELLIGENCE, EXPLAINED.</span><h2>Every journey.<br>A clearer picture.</h2><p>Bring vehicle telemetry, braking physics and AI insights together in one focused workspace.</p><div class="auth-illustration" aria-hidden="true"><div class="auth-route-line"></div><span class="route-node node-one"></span><span class="route-node node-two"></span><span class="route-node node-three"></span><div class="auth-floating-card"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6l8-3Z"/><path d="m8.5 11.5 2.5 2.5 4.5-5"/></svg><div><strong>Clarity at every turn</strong><span>Physics-informed fleet monitoring</span></div></div><div class="auth-coordinate">03.1390° N &nbsp; 101.6869° E</div></div></div><span class="auth-brand-footer">CALIBR8 · Fleet operations workspace</span></div><div class="auth-form-side"><div class="auth-theme"><div class="theme-switch" role="group" aria-label="Appearance"><button type="button" data-theme-choice="light" aria-pressed="false" title="Light theme"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg><span>Light</span></button><button type="button" data-theme-choice="dark" aria-pressed="false" title="Dark theme"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 13A9 9 0 0 1 11 3a9 9 0 1 0 10 10Z"/></svg><span>Dark</span></button><button type="button" data-theme-choice="system" aria-pressed="false" title="Auto theme"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8m-4-4v4"/></svg><span>Auto</span></button></div></div><form class="auth-card" id="authForm"><span class="auth-lock"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V6a4 4 0 0 1 8 0v4"/></svg></span><div class="eyebrow">YOUR WORKSPACE</div><h1>Welcome back.</h1><p>Sign in to monitor your fleet and review safety insights.</p><label for="authEmail">Email address</label><input id="authEmail" type="email" autocomplete="username" placeholder="you@company.com" required><label for="authPassword">Password</label><div class="password-field"><input id="authPassword" type="password" minlength="6" autocomplete="current-password" placeholder="Enter your password" required><button type="button" id="passwordToggle" class="icon-button" aria-label="Show password" aria-pressed="false"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg></button></div><div class="auth-actions"><button class="button primary" type="submit"><span>Sign in to workspace</span><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M7 7h10v10"/></svg></button><button class="button ghost hidden" type="button" id="createAccountBtn">Create account</button></div><button class="auth-demo hidden" type="button" id="anonymousBtn">Use anonymous demo workspace</button><div id="authMessage" class="form-status" role="status" aria-live="polite"></div><button type="button" class="button ghost" id="previewBackBtn" style="margin-top:18px;width:100%">Back to dashboard preview</button><div class="auth-access-note"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6l8-3Z"/><path d="m8.5 11.5 2.5 2.5 4.5-5"/></svg><span>Access is managed by your organization administrator.</span></div></form><div class="auth-bottom-note">One workspace. Your vehicles. The complete picture.</div></div></div>
+<div class="toast-region" id="toastRegion" role="status" aria-live="polite" aria-atomic="true"></div>
+
+
+
+<script>/* CALIBR8 appearance, workspace navigation and accessible interface controls. */
+(function () {
+  'use strict';
+  const root = document.documentElement;
+  const titles = {
+    overview: ['Live monitoring', 'A clear view of your vehicle, route and braking safety.'],
+    fleet: ['Your fleet', 'Find a vehicle and choose what to monitor.'],
+    events: ['Safety events', 'Review braking events for the selected vehicle and trip.'],
+    insights: ['Models & physics', 'Understand the calculations behind each braking assessment.']
+  };
+  const storage = {
+    read(key, fallback) { try { return localStorage.getItem(key) || fallback; } catch { return fallback; } },
+    write(key, value) { try { localStorage.setItem(key, value); } catch {} }
+  };
+  let preference = storage.read('calibr8-theme', 'system');
+  if (!['dark', 'light', 'system'].includes(preference)) preference = 'system';
+  const media = typeof window.matchMedia === 'function' ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+  let activeView = 'overview', initialized = false, toastTimer, previousFocus = null;
+  const $ = id => document.getElementById(id);
+  function applyTheme(value, persist = true) {
+    preference = ['light', 'dark', 'system'].includes(value) ? value : 'system';
+    const theme = preference === 'system' ? (media ? (media.matches ? 'dark' : 'light') : (root.dataset.theme || 'dark')) : preference;
+    root.dataset.theme = theme;
+    root.style.colorScheme = theme;
+    if (persist) storage.write('calibr8-theme', preference);
+    document.querySelectorAll('[data-theme-choice]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.themeChoice === preference)));
+    if ($('browserThemeColor')) $('browserThemeColor').content = theme === 'dark' ? '#10151e' : '#f4f6f8';
+    document.dispatchEvent(new CustomEvent('calibr8:themechange', {detail: {theme, preference}}));
+  }
+  function setSidebar(open) {
+    $('sidebar')?.classList.toggle('open', open);
+    $('sidebarScrim')?.classList.toggle('hidden', !open);
+    $('menuToggle')?.setAttribute('aria-expanded', String(open));
+    $('menuToggle')?.setAttribute('aria-label', open ? 'Close navigation' : 'Open navigation');
+  }
+  function setView(view) {
+    if (!titles[view]) return;
+    activeView = view;
+    document.querySelectorAll('[data-panel]').forEach(panel => panel.classList.toggle('hidden', panel.dataset.panel !== view));
+    document.querySelectorAll('.nav-item[data-view]').forEach(button => {
+      const current = button.dataset.view === view;
+      button.classList.toggle('active', current);
+      if (current) button.setAttribute('aria-current', 'page'); else button.removeAttribute('aria-current');
+    });
+    $('pageTitle').textContent = titles[view][0];
+    $('breadcrumbTitle').textContent = titles[view][0];
+    $('pageDescription').textContent = titles[view][1];
+    setSidebar(false);
+    document.dispatchEvent(new CustomEvent('calibr8:viewchange', {detail: {view}}));
+  }
+  function toast(message) {
+    const region = $('toastRegion');
+    if (!region) return;
+    clearTimeout(toastTimer);region.textContent = message;region.classList.add('visible');
+    toastTimer = setTimeout(() => region.classList.remove('visible'), 4000);
+  }
+  function openConnections() {
+    previousFocus = document.activeElement;
+    $('apiManager').classList.remove('hidden');
+    document.body.classList.add('modal-open');
+    setSidebar(false);$('closeApiManagerBtn')?.focus();
+  }
+  function closeConnections() {
+    $('apiManager').classList.add('hidden');
+    document.body.classList.remove('modal-open');
+    if (previousFocus?.isConnected) previousFocus.focus();
+  }
+  function updateConnectionStatus() {
+    const pill = document.querySelector('.connection-pill');
+    if (!pill) return;
+    const value = $('liveText')?.textContent || '';
+    pill.dataset.status = /RECONNECT|PAUSED/.test(value) ? 'warning' : /LIVE/.test(value) ? 'live' : 'waiting';
+  }
+  function init() {
+    if (initialized || !$('pageTitle')) return;
+    initialized = true;applyTheme(preference, false);
+    document.addEventListener('click', event => {
+      const themeButton = event.target.closest('[data-theme-choice]');
+      if (themeButton) { applyTheme(themeButton.dataset.themeChoice);return; }
+      const viewButton = event.target.closest('[data-view]');
+      if (viewButton) { event.preventDefault();setView(viewButton.dataset.view);return; }
+      if (event.target.closest('[data-open-connections]')) $('manageApisBtn')?.click();
+    });
+    $('menuToggle')?.addEventListener('click', () => setSidebar(!$('sidebar').classList.contains('open')));
+    $('sidebarScrim')?.addEventListener('click', () => setSidebar(false));
+    $('modelSettingsToggle')?.addEventListener('click', () => {
+      const open = $('modelSettings').classList.contains('hidden');
+      $('modelSettings').classList.toggle('hidden', !open);
+      $('modelSettingsToggle').setAttribute('aria-expanded', String(open));
+    });
+    $('passwordToggle')?.addEventListener('click', () => {
+      const show = $('authPassword').type === 'password';
+      $('authPassword').type = show ? 'text' : 'password';
+      $('passwordToggle').setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+      $('passwordToggle').setAttribute('aria-pressed', String(show));
+    });
+    $('copyPayloadBtn')?.addEventListener('click', async () => {
+      const text = $('apiOutput')?.textContent || '';
+      try {
+        if (!navigator.clipboard?.writeText) throw new Error('Clipboard unavailable');
+        await navigator.clipboard.writeText(text);toast('API payload copied.');
+      } catch { toast('Select the payload text and copy it with Ctrl+C.'); }
+    });
+    $('apiManager')?.addEventListener('click', event => { if (event.target === $('apiManager')) closeConnections(); });
+    document.addEventListener('keydown', event => {
+      const modalOpen = !$('apiManager').classList.contains('hidden');
+      if (event.key === 'Escape') {
+        if (modalOpen) closeConnections();
+        else {setSidebar(false);$('menuToggle')?.focus();}
+      }
+      if (event.key !== 'Tab' || !modalOpen) return;
+      const focusable = [...$('apiManager').querySelectorAll('button,input,select,textarea,summary,[tabindex="0"]')].filter(el => !el.disabled && !el.closest('.hidden') && el.type !== 'hidden' && el.getClientRects().length);
+      if (!focusable.length) return;
+      const first = focusable[0], last = focusable.at(-1);
+      if (event.shiftKey && document.activeElement === first) {event.preventDefault();last.focus();}
+      else if (!event.shiftKey && document.activeElement === last) {event.preventDefault();first.focus();}
+    });
+    const updateClock = () => {
+      if ($('workspaceClock')) $('workspaceClock').textContent = new Date().toLocaleDateString(undefined, {day:'2-digit', month:'short', year:'numeric'});
+    };
+    updateClock();
+    if ($('liveText') && typeof MutationObserver === 'function') new MutationObserver(updateConnectionStatus).observe($('liveText'), {childList:true, characterData:true, subtree:true});
+    updateConnectionStatus();
+  }
+  if (media?.addEventListener) media.addEventListener('change', () => { if (preference === 'system') applyTheme('system', false); });
+  window.addEventListener('storage', event => { if (event.key === 'calibr8-theme') applyTheme(event.newValue || 'system', false); });
+  window.CALIBR8_UI = {init, setView, applyTheme, openConnections, closeConnections, toast, get theme(){return root.dataset.theme;}, get preference(){return preference;}, get view(){return activeView;}};
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, {once:true});else init();
+})();
+</script>
+<script>
+(function(){
+ const $=id=>document.getElementById(id),ui=window.CALIBR8_UI;
+ ui.init();
+ const samples={"normal": {"server_time": "2026-10-18T04:56:11.700783+00:00", "vehicle_id": "demo_vehicle", "telemetry": {"pre_event_speed_kmh": 36.0, "post_event_speed_kmh": 36.5, "speed_drop_kmh": 0.0, "peak_deceleration_mps2": -0.15, "mean_deceleration_mps2": -0.0975, "max_jerk_mps3": -0.2143, "event_duration_sec": 2.0, "gps_quality": "high", "sensor_quality": "high", "timestamp_start": "2026-10-18T04:56:11.677850+00:00", "server_updated_at": "2026-10-18T04:56:11.677944+00:00"}, "input": {"pre_event_speed_kmh": 36.0, "post_event_speed_kmh": 36.5, "speed_drop_kmh": 0.0, "peak_deceleration_mps2": -0.15, "mean_deceleration_mps2": -0.0975, "max_jerk_mps3": -0.2143, "event_duration_sec": 2.0, "hour": 4, "dayofweek": 6, "vehicle_type": "passenger_car", "road_type": "urban", "traffic_density": "medium", "weather": "clear", "road_surface": "dry_asphalt", "speed_regime": "medium", "gps_quality": "high", "sensor_quality": "high", "road_grade_ratio": 0.0, "server_updated_at": "2026-10-18T04:56:11.678191+00:00", "timestamp_start": "2026-10-18T04:56:11.677850+00:00"}, "physics": {"mu_est": 0.82, "road_angle_deg": 0.0, "a_traction_mps2": 8.041452999999999, "a_capability_mps2": 7.297999999999999, "a_available_mps2": 7.297999999999999, "aero_drag_mps2": 0.028437500000000004, "rolling_resistance_mps2": 0.1176798, "observed_brake_component_mps2": 0.003882699999999989, "utilisation": 0.0005320224719101109, "physics_label": "normal", "physics_harsh_or_severe": false, "formulae": {"traction": "a_traction = \u03bcg cos(\u03b8) + g sin(\u03b8)", "drag": "a_drag = 0.5 \u03c1 CdA v\u00b2 / m", "rolling": "a_roll = Crr g cos(\u03b8)", "available": "a_available = min(a_traction, a_capability)", "utilisation": "u = a_brake_observed / a_available"}}, "selected_model": "new_ai", "selected_mode": "balanced", "inference": {"model": "CALIBR8-AI XGBoost+LightGBM", "mode": "balanced", "probability_harsh": 1.4365401445261004e-05, "threshold": 0.46, "harsh_or_severe": false, "prediction": "normal_or_mild", "components": {"xgboost_probability": 1.15812144940719e-05, "lightgbm_probability": 1.854168187204466e-05, "xgboost_weight": 0.6, "lightgbm_weight": 0.4}}, "model_comparison": {"new_ai": {"model": "CALIBR8-AI XGBoost+LightGBM", "mode": "balanced", "probability_harsh": 1.4365401445261004e-05, "threshold": 0.46, "harsh_or_severe": false, "prediction": "normal_or_mild", "components": {"xgboost_probability": 1.15812144940719e-05, "lightgbm_probability": 1.854168187204466e-05, "xgboost_weight": 0.6, "lightgbm_weight": 0.4}}, "friend_gbm": {"model": "Friend GBM (HistGradientBoosting)", "mode": "4-class argmax", "probability_harsh": 1.6179622790749935e-07, "threshold": null, "harsh_or_severe": false, "prediction": "normal", "class_probabilities": {"harsh_braking": 8.922241791675938e-08, "mild_braking": 1.1427530648843862e-05, "normal": 0.999988410673123, "severe_braking": 7.257380999073997e-08}}}, "gps": {"lat": 2.9972866666666667, "lon": 101.610905, "speed_kmh": 36.5, "heading_deg": 0.73, "timestamp": "2026-10-18T04:56:11.677850+00:00", "server_updated_at": "2026-10-18T04:56:11.677975+00:00"}, "context": {"vehicle_type": "passenger_car", "road_type": "urban", "traffic_density": "medium", "weather": "clear", "road_surface": "dry_asphalt", "road_grade_ratio": 0.0, "server_updated_at": "2026-10-18T04:56:11.678191+00:00"}, "trip": {"active_trip_id": "trip_20261018T045611649208Z_273d0ec6", "distance_km": 0.020015114442068282, "harsh_events": 0, "route_points": 2, "started_at": "2026-10-18T04:56:11.649233+00:00", "updated_at": "2026-10-18T04:56:11.678111+00:00", "demo_step": 0, "last_lat": 2.9972866666666667, "last_lon": 101.610905, "last_route_point": {"lat": 2.9972866666666667, "lon": 101.610905, "speed_kmh": 36.5, "heading_deg": 0.73, "timestamp": "2026-10-18T04:56:11.677850+00:00", "id": "20261018T045611678080_9cbcf7", "trip_id": "trip_20261018T045611649208Z_273d0ec6", "server_updated_at": "2026-10-18T04:56:11.678107+00:00"}, "server_updated_at": "2026-10-18T04:56:11.678114+00:00"}, "route_point": {"lat": 2.9972866666666667, "lon": 101.610905, "speed_kmh": 36.5, "heading_deg": 0.73, "timestamp": "2026-10-18T04:56:11.677850+00:00", "id": "20261018T045611678080_9cbcf7", "trip_id": "trip_20261018T045611649208Z_273d0ec6", "server_updated_at": "2026-10-18T04:56:11.678107+00:00"}, "event": null, "replay": {"scenario": "route_1", "scenarioName": "Sample Route 1", "deviceId": "075034653492", "step": 10, "index": 10, "cycle": 0, "totalPoints": 114, "sourceDateTime": 1777536995, "sourceDeltaSec": 2.0, "derivedLongitudinalAccelMps2": 0.0694, "harshInjectionIndex": 10, "harshInjected": false}, "raw_api_output": {"deviceidint": 0, "deviceId": "075034653492", "dateTime": 1792299371, "latitude": 2.9972866666666667, "longitude": 101.610905, "speed": 36.5, "direction": "000.73", "position": "A", "status": "00000000", "sign": "L", "reserveSection": "00000000", "tripId": 0, "carstatus": 0, "type": 0, "isMigrated": false, "driverName": "", "driverID": "", "sourceDateTime": 1777536995, "replayScenario": "route_1", "replayIndex": 10, "replayCycle": 0, "isReplay": true, "harshBrakingEvent": null}, "harsh_event": null}, "harsh": {"server_time": "2026-10-18T04:56:11.588773+00:00", "vehicle_id": "demo_vehicle", "telemetry": {"pre_event_speed_kmh": 55.0, "post_event_speed_kmh": 33.706, "speed_drop_kmh": 21.294, "peak_deceleration_mps2": -6.5, "mean_deceleration_mps2": -4.55, "max_jerk_mps3": -13.0, "event_duration_sec": 1.3, "gps_quality": "high", "sensor_quality": "high", "timestamp_start": "2026-10-18T04:56:11.562483+00:00", "server_updated_at": "2026-10-18T04:56:11.562668+00:00"}, "input": {"pre_event_speed_kmh": 55.0, "post_event_speed_kmh": 33.706, "speed_drop_kmh": 21.294, "peak_deceleration_mps2": -6.5, "mean_deceleration_mps2": -4.55, "max_jerk_mps3": -13.0, "event_duration_sec": 1.3, "hour": 4, "dayofweek": 6, "vehicle_type": "passenger_car", "road_type": "urban", "traffic_density": "medium", "weather": "clear", "road_surface": "dry_asphalt", "speed_regime": "medium", "gps_quality": "high", "sensor_quality": "high", "road_grade_ratio": 0.0, "server_updated_at": "2026-10-18T04:56:11.563018+00:00", "timestamp_start": "2026-10-18T04:56:11.562483+00:00"}, "physics": {"mu_est": 0.82, "road_angle_deg": 0.0, "a_traction_mps2": 8.041452999999999, "a_capability_mps2": 7.297999999999999, "a_available_mps2": 7.297999999999999, "aero_drag_mps2": 0.06637610918209877, "rolling_resistance_mps2": 0.1176798, "observed_brake_component_mps2": 6.315944090817901, "utilisation": 0.8654349261191973, "physics_label": "severe_braking", "physics_harsh_or_severe": true, "formulae": {"traction": "a_traction = \u03bcg cos(\u03b8) + g sin(\u03b8)", "drag": "a_drag = 0.5 \u03c1 CdA v\u00b2 / m", "rolling": "a_roll = Crr g cos(\u03b8)", "available": "a_available = min(a_traction, a_capability)", "utilisation": "u = a_brake_observed / a_available"}}, "selected_model": "new_ai", "selected_mode": "balanced", "inference": {"model": "CALIBR8-AI XGBoost+LightGBM", "mode": "balanced", "probability_harsh": 0.9993684128281951, "threshold": 0.46, "harsh_or_severe": true, "prediction": "harsh_or_severe", "components": {"xgboost_probability": 0.9994825124740601, "lightgbm_probability": 0.9991972633593976, "xgboost_weight": 0.6, "lightgbm_weight": 0.4}}, "model_comparison": {"new_ai": {"model": "CALIBR8-AI XGBoost+LightGBM", "mode": "balanced", "probability_harsh": 0.9993684128281951, "threshold": 0.46, "harsh_or_severe": true, "prediction": "harsh_or_severe", "components": {"xgboost_probability": 0.9994825124740601, "lightgbm_probability": 0.9991972633593976, "xgboost_weight": 0.6, "lightgbm_weight": 0.4}}, "friend_gbm": {"model": "Friend GBM (HistGradientBoosting)", "mode": "4-class argmax", "probability_harsh": 0.9994454449223569, "threshold": null, "harsh_or_severe": true, "prediction": "severe_braking", "class_probabilities": {"harsh_braking": 0.26450234806962686, "mild_braking": 0.00045727526902101026, "normal": 9.727980862216485e-05, "severe_braking": 0.73494309685273}}}, "gps": {"lat": 2.996436666666667, "lon": 101.60948833333332, "speed_kmh": 33.706, "heading_deg": 180.51, "timestamp": "2026-10-18T04:56:11.562483+00:00", "server_updated_at": "2026-10-18T04:56:11.562776+00:00"}, "context": {"vehicle_type": "passenger_car", "road_type": "urban", "traffic_density": "medium", "weather": "clear", "road_surface": "dry_asphalt", "road_grade_ratio": 0.0, "server_updated_at": "2026-10-18T04:56:11.563018+00:00"}, "trip": {"active_trip_id": "trip_20261018T045611562814Z_24660ab3", "distance_km": 0.0, "harsh_events": 1, "route_points": 1, "started_at": "2026-10-18T04:56:11.562844+00:00", "updated_at": "2026-10-18T04:56:11.588899+00:00", "demo_step": 0, "last_lat": 2.996436666666667, "last_lon": 101.60948833333332, "last_route_point": {"lat": 2.996436666666667, "lon": 101.60948833333332, "speed_kmh": 33.706, "heading_deg": 180.51, "timestamp": "2026-10-18T04:56:11.562483+00:00", "id": "20261018T045611562885_1a0bc9", "trip_id": "trip_20261018T045611562814Z_24660ab3", "server_updated_at": "2026-10-18T04:56:11.562895+00:00"}, "server_updated_at": "2026-10-18T04:56:11.588902+00:00"}, "route_point": {"lat": 2.996436666666667, "lon": 101.60948833333332, "speed_kmh": 33.706, "heading_deg": 180.51, "timestamp": "2026-10-18T04:56:11.562483+00:00", "id": "20261018T045611562885_1a0bc9", "trip_id": "trip_20261018T045611562814Z_24660ab3", "server_updated_at": "2026-10-18T04:56:11.562895+00:00"}, "event": {"event_id": "0f56fce125965b56f25e", "timestamp": "2026-10-18T04:56:11.562483+00:00", "model": "CALIBR8-AI XGBoost+LightGBM", "model_key": "new_ai", "mode": "balanced", "probability": 0.9993684128281951, "speed_kmh": 55.0, "peak_decel_mps2": -6.5, "physics_label": "severe_braking", "utilisation": 0.8654349261191973, "lat": 2.996436666666667, "lon": 101.60948833333332}, "replay": {"scenario": "route_1", "scenarioName": "Sample Route 1", "deviceId": "075034653492", "step": 0, "index": 0, "cycle": 0, "totalPoints": 114, "sourceDateTime": 1777536955, "sourceDeltaSec": 1.0, "derivedLongitudinalAccelMps2": 0.0, "harshInjectionIndex": 10, "harshInjected": true}, "raw_api_output": {"deviceidint": 0, "deviceId": "075034653492", "dateTime": 1792299371, "latitude": 2.996436666666667, "longitude": 101.60948833333332, "speed": 33.7, "direction": "180.51", "position": "A", "status": "00000000", "sign": "L", "reserveSection": "00000000", "tripId": 0, "carstatus": 0, "type": 0, "isMigrated": false, "driverName": "", "driverID": "", "sourceDateTime": 1777536955, "replayScenario": "route_1", "replayIndex": 0, "replayCycle": 0, "isReplay": true, "harshBrakingEvent": {"eventType": "HARSH_BRAKING", "isHarshBraking": true, "preSpeedKmh": 55.0, "postSpeedKmh": 33.71, "speedDropKmh": 21.29, "peakDecelerationMps2": -6.5, "meanDecelerationMps2": -4.55, "maxJerkMps3": -13.0, "durationSec": 1.3, "reason": "Controlled replay injection for CALIBR8 dashboard/model validation"}}, "harsh_event": {"eventType": "HARSH_BRAKING", "isHarshBraking": true, "preSpeedKmh": 55.0, "postSpeedKmh": 33.71, "speedDropKmh": 21.29, "peakDecelerationMps2": -6.5, "meanDecelerationMps2": -4.55, "maxJerkMps3": -13.0, "durationSec": 1.3, "reason": "Controlled replay injection for CALIBR8 dashboard/model validation"}}};
+ const mapSvg="<svg viewBox=\"0 0 760 350\" role=\"img\" aria-label=\"Schematic of the recorded sample route\" style=\"position:absolute;inset:0;width:100%;height:100%;background:var(--map-bg)\"><defs><pattern id=\"road-grid\" width=\"62\" height=\"62\" patternUnits=\"userSpaceOnUse\" patternTransform=\"rotate(-14 380 175)\"><rect width=\"62\" height=\"62\" fill=\"var(--map-bg)\"/><path d=\"M0 0H62M0 0V62\" stroke=\"var(--line)\" stroke-width=\"2\"/></pattern></defs><rect width=\"760\" height=\"350\" fill=\"url(#road-grid)\"/><path d=\"M-20 250Q150 145 340 210T780 105\" fill=\"none\" stroke=\"var(--panel-raised)\" stroke-width=\"28\"/><path d=\"M-20 250Q150 145 340 210T780 105\" fill=\"none\" stroke=\"var(--line)\" stroke-width=\"2\" stroke-dasharray=\"6 6\"/><rect x=\"20\" y=\"20\" width=\"227\" height=\"29\" rx=\"5\" fill=\"var(--panel)\" stroke=\"var(--line)\"/><text x=\"32\" y=\"39\" fill=\"var(--muted)\" font-family=\"sans-serif\" font-size=\"10\" letter-spacing=\"1\">RECORDED ROUTE \u00b7 SCHEMATIC</text><polyline points=\"95.0,270.0 107.3,267.9 151.3,255.2 287.9,231.7 404.2,226.4 432.6,221.4 440.4,212.4 444.5,186.8 444.5,148.9 444.5,104.5 444.5,60.0\" fill=\"none\" stroke=\"var(--panel)\" stroke-width=\"9\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><polyline points=\"95.0,270.0 107.3,267.9 151.3,255.2 287.9,231.7 404.2,226.4 432.6,221.4 440.4,212.4 444.5,186.8 444.5,148.9 444.5,104.5 444.5,60.0\" fill=\"none\" stroke=\"var(--route)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"95.0\" cy=\"270.0\" r=\"6\" fill=\"var(--panel)\" stroke=\"var(--route)\" stroke-width=\"3\"/><circle cx=\"444.5\" cy=\"60.0\" r=\"16\" fill=\"var(--accent-soft)\" opacity=\".9\"/><circle cx=\"444.5\" cy=\"60.0\" r=\"8\" fill=\"var(--accent)\" stroke=\"var(--panel)\" stroke-width=\"3\"/><text x=\"30\" y=\"330\" fill=\"var(--subtle)\" font-family=\"sans-serif\" font-size=\"10\">Recorded sample coordinates \u00b7 illustrative grid</text></svg>";
+ const sampleSpeeds=[5.6, 11.6, 21.8, 26.4, 18.7, 6.8, 15.6, 26.1, 34.5, 36.0, 36.5],sampleDecels=[0.15, 0.15, 0.15, 0.15, 0.21388888888888888, 0.8263888888888887, 0.15, 0.15, 0.15, 0.15, 0.15];
+ let current='normal',model='new_ai';
+ const f=(v,n=2)=>v==null?'—':Number(v).toFixed(n);
+ const pretty=s=>String(s||'—').replaceAll('_',' ');
+ $('authStatus').textContent='Preview account';$('accountInitial').textContent='P';
+ $('liveText').textContent='PREVIEW';$('firestoreStatus').textContent='Visual preview · no live connection';
+ $('sourceSelect').value='replay';$('fleetConnectionControl').classList.add('hidden');$('fleetVehicleControl').classList.add('hidden');
+ $('sourceCaption').textContent='Recorded Route 1 sample · preview only';document.querySelector('.source-panel').dataset.source='replay';
+ $('fleetUnavailable').classList.add('hidden');$('fleetPanel').classList.remove('hidden');
+ $('sourceSelect').addEventListener('change',()=>{$('sourceSelect').value='replay';ui.toast('Change data sources in the deployed dashboard. This preview uses a recorded sample.');});
+ $('scenarioSelect').addEventListener('change',()=>{$('scenarioSelect').value='route_1';ui.toast('This preview uses the recorded Route 1 sample.');});
+ document.querySelector('.api-output-card').style.minWidth='0';
+ function chart(){
+  const speed=sampleSpeeds.slice(),decel=sampleDecels.slice();
+  if(current==='harsh'){speed[speed.length-1]=samples.harsh.gps.speed_kmh;decel[decel.length-1]=6.5;}
+  const w=690,h=220,left=40,right=645,top=33,bottom=184;
+  const line=(values,max)=>values.map((v,i)=>`${(left+i*(right-left)/Math.max(1,values.length-1)).toFixed(1)},${(bottom-v/max*(bottom-top)).toFixed(1)}`).join(' ');
+  const grid=[0,10,20,30,40,50].map(v=>{const y=bottom-v/50*(bottom-top);return `<path d="M${left} ${y}H${right}" stroke="var(--chart-grid)"/><text x="${left-10}" y="${y+3}" text-anchor="end" font-size="9" fill="var(--muted)">${v}</text>`}).join('');
+  const times=[0,Math.floor((pointsCount-1)/2),pointsCount-1].map(i=>`<text x="${left+i*(right-left)/Math.max(1,pointsCount-1)}" y="207" text-anchor="middle" font-size="9" fill="var(--muted)">Sample ${i+1}</text>`).join('');
+  document.querySelector('.chart-container').innerHTML=`<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="Recorded sample speed and braking plot" style="width:100%;height:100%"><text x="42" y="15" font-size="9" fill="var(--muted)">km/h</text><text x="641" y="15" text-anchor="end" font-size="9" fill="var(--muted)">m/s²</text><path d="M400 14h12" stroke="var(--chart-speed)" stroke-width="2"/><text x="418" y="17" font-size="9" fill="var(--muted)">Speed</text><path d="M480 14h12" stroke="var(--chart-decel)" stroke-width="2"/><text x="498" y="17" font-size="9" fill="var(--muted)">Peak decel.</text>${grid}<polyline points="${line(speed,50)}" fill="none" stroke="var(--chart-speed)" stroke-width="2" stroke-linejoin="round"/><polyline points="${line(decel,8)}" fill="none" stroke="var(--chart-decel)" stroke-width="2" stroke-linejoin="round"/>${[0,2,4,6,8].map(v=>`<text x="${right+11}" y="${bottom-v/8*(bottom-top)+3}" fill="var(--muted)" font-size="9">${v}</text>`).join('')}${times}</svg>`;
+ }
+ const pointsCount=sampleSpeeds.length;
+ function render(){
+  const p=samples[current],t=p.telemetry,phys=p.physics,result=p.model_comparison[model];
+  $('speed').textContent=f(p.gps.speed_kmh,1);$('peak').textContent=f(t.peak_deceleration_mps2);$('jerk').textContent=f(t.max_jerk_mps3);
+  $('util').textContent=f(phys.utilisation*100,0);$('distance').textContent=f(p.trip.distance_km);$('harshCount').textContent=p.trip.harsh_events;
+  $('riskPct').textContent=f(result.probability_harsh*100,1)+'%';$('gaugeArc').style.strokeDasharray=`${result.probability_harsh*100} ${100-result.probability_harsh*100}`;
+  $('gaugeArc').style.stroke=result.harsh_or_severe?'var(--danger)':'var(--positive)';
+  $('decisionBadge').className='decision '+(result.harsh_or_severe?'harsh':'safe');$('decisionBadge').textContent=result.harsh_or_severe?'HARSH / SEVERE':'NORMAL / MILD';
+  $('modelName').textContent=result.model;$('decisionText').textContent=result.harsh_or_severe?'Controlled test event detected. Review the braking estimate and recorded position.':'No harsh or severe braking in this recorded sample.';
+  $('newAiMini').textContent=f(p.model_comparison.new_ai.probability_harsh*100,1)+'%';$('friendMini').textContent=f(p.model_comparison.friend_gbm.probability_harsh*100,1)+'%';$('physicsMini').textContent=pretty(phys.physics_label);$('physicsLabel').textContent=pretty(phys.physics_label);
+  for(const [id,key,unit,n] of [['mu','mu_est','',3],['angle','road_angle_deg','°',2],['traction','a_traction_mps2',' m/s²',2],['capability','a_capability_mps2',' m/s²',2],['available','a_available_mps2',' m/s²',2],['brakeObs','observed_brake_component_mps2',' m/s²',2]])$(id).textContent=f(phys[key],n)+unit;
+  for(const [id,key] of [['vehicle','vehicle_type'],['road','road_type'],['traffic','traffic_density'],['weather','weather'],['surface','road_surface']])$(id).textContent=pretty(p.context[key]);
+  $('grade').textContent=f(p.context.road_grade_ratio*100,1)+'%';$('qualityBadge').textContent='Recorded sample · GPS-derived estimate';
+  $('coords').textContent=`GPS: ${f(p.gps.lat,5)}, ${f(p.gps.lon,5)}`;$('routeInfo').textContent=pointsCount+' recorded points';
+  $('map').innerHTML=mapSvg;$('replayBadge').textContent='Route 1 · recorded sample';$('replayDevice').textContent='075034653492';$('replayPoint').textContent=`${pointsCount} / 114`;$('replayDelta').textContent=f(samples.normal.replay.sourceDeltaSec,1)+' s';$('replayAccel').textContent=f(samples.normal.replay.derivedLongitudinalAccelMps2,3)+' m/s²';
+  $('apiOutput').textContent=JSON.stringify(p.raw_api_output,null,2);
+  $('playbackStatus').textContent='Preview sample';$('nextTickText').textContent='Static sample · no live playback';$('startReplayBtn').disabled=false;$('pauseReplayBtn').disabled=true;
+  $('activeModelLabel').textContent=model==='new_ai'?'CALIBR8-AI · '+($('modeSelect').value==='safety'?'Safety':'Balanced'):'Friend GBM · 4 classes';
+  const components=p.model_comparison.new_ai.components;$('submodelInfo').textContent=`Recorded model results · XGBoost ${f(components.xgboost_probability*100,1)}% · LightGBM ${f(components.lightgbm_probability*100,1)}%.`;
+  $('updatedAt').textContent='Recorded sample · '+new Date(p.server_time).toLocaleString();
+  $('harshReplayBadge').textContent=current==='harsh'?'Controlled injection':'Not active';
+  $('harshOutput').className=current==='harsh'?'harsh-event-box':'harsh-output-empty';
+  $('harshOutput').textContent=current==='harsh'?'Controlled injection: peak −6.50 m/s² · jerk −13.00 m/s³. Use Restart to return to the normal sample.':'Try Inject harsh event in the replay toolbar to inspect a controlled test sample.';
+  document.querySelector('.events-metric').classList.toggle('has-events',current==='harsh');
+  const q=($('eventSearch').value||'').trim().toLowerCase();
+  const e=p.event;
+  const eventMatches=e&&(!q||['calibr8-ai',pretty(e.physics_label),e.lat,e.lon].join(' ').toLowerCase().includes(q));
+  $('eventRows').innerHTML=eventMatches?`<tr><td>${new Date(e.timestamp).toLocaleTimeString()}</td><td>CALIBR8-AI</td><td><span class="probability-chip">${f(e.probability*100,1)}%</span></td><td>${f(e.speed_kmh,1)} km/h</td><td>${f(e.peak_decel_mps2)} m/s²</td><td>${pretty(e.physics_label)} · ${f(e.utilisation*100,0)}%</td><td>${f(e.lat,5)}, ${f(e.lon,5)}</td></tr>`:`<tr><td colspan="7" class="empty">${q?'No events match your search.':'No harsh-braking events recorded for this sample.'}</td></tr>`;
+  $('eventCountLabel').textContent=eventMatches?'1 sample event':'0 events';
+  for(const kind of ['telemetry','gps','context','inference']){$(kind+'Status').textContent='Recorded sample';$(kind+'Latency').textContent='preview';}
+  chart();
+ }
+ function fleet(){const q=$('fleetSearch').value.trim().toLowerCase();$('fleetCount').textContent='1';$('fleetSummary').textContent='1 sample vehicle · preview only';$('fleetGrid').innerHTML=!q||'075034653492 sample route'.includes(q)?'<div class="fleet-card active"><div class="fleet-card-head"><div><strong>075034653492</strong><span>Recorded Route 1</span></div><span class="status-online">sample</span></div><div class="fleet-card-metrics"><span>36.5 km/h</span><span>Recorded GPS data</span></div><button class="button ghost" type="button" data-view="overview">View sample</button></div>':'<div class="empty-fleet">No vehicles match your search.</div>';}
+ $('manageApisBtn').addEventListener('click',()=>{ui.openConnections();$('connectionsList').innerHTML='<div class="empty-fleet">API connection setup is available in the deployed dashboard.</div>';});
+ $('closeApiManagerBtn').addEventListener('click',()=>ui.closeConnections());
+ $('connectionForm').addEventListener('submit',e=>{e.preventDefault();ui.toast('Preview only. Save API connections in your deployed dashboard.');});
+ $('clearConnectionFormBtn').addEventListener('click',()=>$('connectionForm').reset());
+ $('injectHarshBtn').addEventListener('click',()=>{current='harsh';render();ui.toast('Showing the controlled harsh-braking test result.');});
+ $('restartReplayBtn').addEventListener('click',()=>{current='normal';render();});$('resetBtn').addEventListener('click',()=>{current='normal';render();});
+ $('startReplayBtn').addEventListener('click',()=>ui.toast('This is a still-sample preview. Deploy the package to run live replay.'));
+ $('exportBtn').addEventListener('click',()=>ui.toast('CSV export is available in your deployed dashboard.'));
+ $('centerMapBtn').addEventListener('click',()=>ui.toast('This preview uses a schematic of the recorded route.'));
+ $('refreshFleetBtn').addEventListener('click',()=>{fleet();ui.toast('Showing one recorded sample vehicle.');});
+ $('fleetSearch').addEventListener('input',fleet);$('eventSearch').addEventListener('input',render);
+ $('enableFleetBtn').addEventListener('click',()=>ui.toast('Connect a live vehicle API after deploying the package.'));
+ document.querySelectorAll('.seg').forEach(button=>button.addEventListener('click',()=>{model=button.dataset.model;document.querySelectorAll('.seg').forEach(b=>{b.classList.toggle('active',b===button);b.setAttribute('aria-pressed',String(b===button));});$('modeSelect').disabled=model==='friend_gbm';render();}));
+ $('modeSelect').addEventListener('change',render);
+ const showLogin=()=>{document.body.classList.remove('workspace-authenticated');$('authGate').classList.remove('hidden');};
+ $('previewLoginBtn').addEventListener('click',showLogin);$('signOutBtn').addEventListener('click',showLogin);
+ $('previewBackBtn').addEventListener('click',()=>{document.body.classList.add('workspace-authenticated');$('authGate').classList.add('hidden');});
+ $('authForm').addEventListener('submit',e=>{e.preventDefault();ui.toast('This preview does not sign in. Use Back to dashboard preview.');});
+ $('createAccountBtn').classList.add('hidden');$('anonymousBtn').classList.add('hidden');
+ fleet();render();
+})();
+</script>
+</body>
+</html>

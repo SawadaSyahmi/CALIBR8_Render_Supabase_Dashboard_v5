@@ -35,7 +35,7 @@ from .sources import read_external
 from .replay import build_replay_payload, harsh_output_example, list_scenarios, SCENARIOS
 from .store import SupabaseStore, utcnow_iso
 
-app=FastAPI(title='CALIBR8 Render + Supabase Fleet API',version='5.0')
+app=FastAPI(title='CALIBR8 Render + Supabase Fleet API',version='5.1')
 app.add_middleware(CORSMiddleware,allow_origins=['*'],allow_methods=['*'],allow_headers=['*'])
 store=SupabaseStore(); models=ModelHub()
 
@@ -100,16 +100,22 @@ def infer_and_store(cid:str,vehicle_id:str,model_name:str,mode:str):
     event=merge_event(t,g,c); phys=physics_calculation(event)
     new_ai=models.new_ai(event,mode); friend=models.friend_gbm(event)
     selected=new_ai if model_name=='new_ai' else friend
-    payload={'server_time':utcnow_iso(),'vehicle_id':vehicle_id,'input':event,'physics':phys,'selected_model':model_name,'selected_mode':mode,
+    payload={'server_time':utcnow_iso(),'vehicle_id':vehicle_id,'telemetry':t,'input':event,'physics':phys,'selected_model':model_name,'selected_mode':mode,
              'inference':selected,'model_comparison':{'new_ai':new_ai,'friend_gbm':friend},'gps':g,'context':c}
-    store.set_live(cid,vehicle_id,'inference',payload)
+    latest_event=None
     if selected['harsh_or_severe']:
-        raw=f"{event.get('timestamp_start')}|{model_name}|{mode}".encode(); event_id=hashlib.sha1(raw).hexdigest()[:20]
+        raw=f"{vehicle_id}|{event.get('timestamp_start')}|{model_name}|{mode}".encode(); event_id=hashlib.sha1(raw).hexdigest()[:20]
         e={'event_id':event_id,'timestamp':event.get('timestamp_start') or utcnow_iso(),'model':selected['model'],'model_key':model_name,'mode':mode,
            'probability':float(selected['probability_harsh']),'speed_kmh':float(event.get('pre_event_speed_kmh',0)),
            'peak_decel_mps2':float(event.get('peak_deceleration_mps2',0)),'physics_label':phys['physics_label'],'utilisation':phys['utilisation'],
            'lat':float(g['lat']),'lon':float(g['lon'])}
         store.record_event(cid,vehicle_id,event_id,e)
+        latest_event=e
+    # Every successful response carries the values needed by the measurement cards.
+    # Realtime is an additional delivery path, never a prerequisite for rendering.
+    trip=store.get_live(cid,vehicle_id,'trip') or {}
+    payload.update(trip=trip,route_point=trip.get('last_route_point'),event=latest_event)
+    store.set_live(cid,vehicle_id,'inference',payload)
     return payload
 
 def replay_and_store(cid:str,req:ReplayRequest,harsh_demo:bool=False,force_harsh:bool=False):
@@ -163,6 +169,16 @@ def client_config():
     if not settings.supabase_url or not settings.supabase_anon_key:
         raise HTTPException(status_code=503,detail='SUPABASE_URL and SUPABASE_ANON_KEY are not configured')
     return {'supabase_url':settings.supabase_url,'supabase_anon_key':settings.supabase_anon_key}
+
+@app.get('/api/state')
+def dashboard_state(vehicle_id:str=Query(settings.default_vehicle_id),auth_payload=Depends(dashboard_auth)):
+    """Authenticated read fallback for startup, push mode, routes and event history."""
+    cid=customer_id(auth_payload)
+    live=store.get_dashboard_live(cid,vehicle_id)
+    trip_id=(live.get('trip') or {}).get('active_trip_id')
+    return {'vehicle_id':vehicle_id,'live':live,
+            'route_points':store.list_route_points(cid,vehicle_id,trip_id) if trip_id else [],
+            'events':store.list_events(cid,vehicle_id,trip_id,limit=50) if trip_id else []}
 
 # Direct push ingestion. All authorized/device writes go to the single organization workspace.
 @app.post('/api/ingest/telemetry')

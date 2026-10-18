@@ -69,7 +69,7 @@ class SupabaseStore:
         live=self.get_live(customer_id,vehicle_id,'trip')
         if live and live.get('active_trip_id'):
             return live
-        trip_id='trip_'+datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')
+        trip_id='trip_'+datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S%fZ')+'_'+uuid.uuid4().hex[:8]
         data={'active_trip_id':trip_id,'distance_km':0.0,'harsh_events':0,'route_points':0,'started_at':utcnow_iso(),'updated_at':utcnow_iso(),'demo_step':0,'last_lat':None,'last_lon':None}
         self.set_live(customer_id,vehicle_id,'trip',data)
         self._upsert('trips',{'trip_id':trip_id,'vehicle_id':vehicle_id,'data':data,'updated_at':data['updated_at']},'trip_id')
@@ -92,6 +92,16 @@ class SupabaseStore:
         rows=self._select('live_state',{'vehicle_id':f'eq.{vehicle_id}','kind':f'eq.{kind}','limit':'1'})
         return rows[0].get('data') if rows else None
 
+    def get_dashboard_live(self,customer_id:str,vehicle_id:str)->dict:
+        rows=self._select('live_state',{'vehicle_id':f'eq.{vehicle_id}'})
+        allowed={'telemetry','gps','context','trip','inference','raw_api'}
+        return {r['kind']:r.get('data') or {} for r in rows if r.get('kind') in allowed}
+
+    def list_route_points(self,customer_id:str,vehicle_id:str,trip_id:str,limit:int=500)->list[dict]:
+        rows=self._select('route_points',{'vehicle_id':f'eq.{vehicle_id}','trip_id':f'eq.{trip_id}',
+                                        'order':'server_updated_at.desc,id.desc','limit':str(limit)})
+        return [{**(r.get('data') or {}),'id':r['id']} for r in reversed(rows)]
+
     def add_gps(self,customer_id:str,vehicle_id:str,gps:dict):
         trip=self.ensure_trip(customer_id,vehicle_id); trip_id=trip['active_trip_id']
         lat=float(gps['lat']); lon=float(gps['lon'])
@@ -99,11 +109,11 @@ class SupabaseStore:
         if trip.get('last_lat') is not None and trip.get('last_lon') is not None:
             inc=haversine_km(float(trip['last_lat']),float(trip['last_lon']),lat,lon)
             if inc>2.0: inc=0.0
-        updated={**trip,'distance_km':float(trip.get('distance_km',0))+inc,'route_points':int(trip.get('route_points',0))+1,'last_lat':lat,'last_lon':lon,'updated_at':utcnow_iso()}
+        pid=f"{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S%f')}_{uuid.uuid4().hex[:6]}"
+        point={**gps,'id':pid,'trip_id':trip_id,'server_updated_at':utcnow_iso()}
+        updated={**trip,'distance_km':float(trip.get('distance_km',0))+inc,'route_points':int(trip.get('route_points',0))+1,'last_lat':lat,'last_lon':lon,'last_route_point':point,'updated_at':utcnow_iso()}
         self.set_live(customer_id,vehicle_id,'trip',updated)
         self._upsert('trips',{'trip_id':trip_id,'vehicle_id':vehicle_id,'data':updated,'updated_at':updated['updated_at']},'trip_id')
-        point=dict(gps); point['trip_id']=trip_id; point['server_updated_at']=utcnow_iso()
-        pid=f"{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S%f')}_{uuid.uuid4().hex[:6]}"
         self._insert('route_points',{'id':pid,'vehicle_id':vehicle_id,'trip_id':trip_id,'timestamp':gps.get('timestamp') or utcnow_iso(),'server_updated_at':point['server_updated_at'],'data':point})
         return updated
 
@@ -142,8 +152,8 @@ class SupabaseStore:
         return data
 
     def list_events(self,customer_id:str,vehicle_id:str,trip_id:str,limit:int=1000)->list[dict]:
-        rows=self._select('events',{'trip_id':f'eq.{trip_id}','order':'timestamp.desc','limit':str(limit)})
-        return [r.get('data') or {} for r in rows]
+        rows=self._select('events',{'vehicle_id':f'eq.{vehicle_id}','trip_id':f'eq.{trip_id}','order':'timestamp.desc','limit':str(limit)})
+        return [{**(r.get('data') or {}),'event_id':r['event_id']} for r in rows]
 
     def save_connection(self, customer_id:str, connection_id:str, data:dict)->dict:
         old=self.get_connection(customer_id,connection_id) or {}
