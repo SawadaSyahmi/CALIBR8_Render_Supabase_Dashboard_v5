@@ -1,121 +1,1075 @@
 <!doctype html>
 <html lang="en" data-theme="dark">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#10151e" id="browserThemeColor">
-<meta name="color-scheme" content="dark light">
-<title>CALIBR8 · Fleet Intelligence</title>
-<script>(function(){try{var p=localStorage.getItem('calibr8-theme')||'system';document.documentElement.dataset.theme=p==='light'||p==='dark'?p:(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');}catch(e){document.documentElement.dataset.theme='dark';}})();</script>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
-<link rel="stylesheet" href="/style.css?v=5.2.2-replay">
-<script src="/ui.js?v=5.2-ui" defer></script>
-</head>
-<body>
-<a class="skip-link" href="#mainContent">Skip to dashboard</a>
-<div class="app-layout shell">
-  <div class="sidebar-scrim hidden" id="sidebarScrim"></div>
-  <aside class="sidebar" id="sidebar" aria-label="Main navigation">
-    <a class="brand" href="#overview" aria-label="CALIBR8 home" data-view="overview"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 36 36"><path d="M25 9H15a9 9 0 0 0 0 18h10" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="square"/><path d="m22 13 6 5-6 5M13 18h14" fill="none" stroke="currentColor" stroke-width="3"/></svg></span><span class="brand-name">CALIBR<span>8</span><small>FLEET INTELLIGENCE</small></span></a>
-    <div class="workspace-card"><span class="workspace-avatar">C</span><div><strong>Fleet workspace</strong><span>Operations centre</span></div><span class="workspace-dot" title="Shared organization workspace"></span></div>
-    <div class="nav-label">WORKSPACE</div>
-    <nav class="side-nav"><button class="nav-item active" type="button" data-view="overview" aria-current=page><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span>Live monitoring</span></button><button class="nav-item " type="button" data-view="fleet" ><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 8 2-4h10l2 4M5 8h14a2 2 0 0 1 2 2v7H3v-7a2 2 0 0 1 2-2Z"/><path d="M3 17v3h4v-3m10 0v3h4v-3M6 12h2m8 0h2"/></svg><span>Fleet</span><span class=nav-count id=fleetCount>0</span></button><button class="nav-item " type="button" data-view="events" ><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6l8-3Z"/><path d="m8.5 11.5 2.5 2.5 4.5-5"/></svg><span>Safety events</span></button><button class="nav-item " type="button" data-view="insights" ><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12h4l3-8 6 16 3-8h4"/></svg><span>Models & physics</span></button></nav>
-    <div class="nav-label nav-label-second">MANAGE</div>
-    <button class="nav-item" id="manageApisBtn" type="button"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8 3 0 4m8-4v4M6 7h12v4a6 6 0 0 1-12 0V7Zm6 10v4"/></svg><span>API connections</span></button>
-    <div class="sidebar-bottom">
-      <div class="workspace-security"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V6a4 4 0 0 1 8 0v4"/></svg><div><strong>Authorized workspace</strong><span>Secure account access</span></div></div>
-      <div class="account-block"><span class="account-avatar" id="accountInitial">U</span><div class="account-details"><strong id="authStatus">Signed out</strong><span>Organization member</span></div><button id="signOutBtn" class="icon-button" type="button" aria-label="Sign out" title="Sign out"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4H4v16h5m5-12 4 4-4 4m-6-4h10"/></svg></button></div>
-    </div>
-  </aside>
-  <div class="workspace-main">
-    <header class="workspace-topbar">
-      <div class="breadcrumb"><button class="icon-button menu-toggle" id="menuToggle" type="button" aria-label="Open navigation" aria-expanded="false" aria-controls="sidebar"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button><span>Workspace</span><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg><strong id="breadcrumbTitle">Live monitoring</strong></div>
-      <div class="topbar-tools"><span class="clock-label" id="workspaceClock"></span><div class="theme-switch" role="group" aria-label="Appearance"><button type="button" data-theme-choice="light" aria-pressed="false" title="Light theme"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg><span>Light</span></button><button type="button" data-theme-choice="dark" aria-pressed="false" title="Dark theme"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 13A9 9 0 0 1 11 3a9 9 0 1 0 10 10Z"/></svg><span>Dark</span></button><button type="button" data-theme-choice="system" aria-pressed="false" title="Auto theme"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8m-4-4v4"/></svg><span>Auto</span></button></div><div class="connection-pill"><span class="pulse"></span><span id="liveText">CONNECTING</span></div></div>
-    </header>
-    <main class="page-content" id="mainContent" tabindex="-1">
-      <div class="page-heading"><div><div class="eyebrow">FLEET OPERATIONS</div><h1 id="pageTitle">Live monitoring</h1><p id="pageDescription">A clear view of your vehicle, route and braking safety.</p></div><div class="page-actions"><button id="resetBtn" class="button ghost" type="button"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9a9 9 0 1 1 1 9M3 3v6h6"/></svg><span>Reset trip</span></button><button id="exportBtn" class="button primary" type="button"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M4 16v4h16v-4"/></svg><span>Export CSV</span></button></div></div>
-      <section class="source-panel panel" aria-label="Monitoring configuration">
-        <div class="source-fields">
-          <div class="control-group source-control"><label for="sourceSelect">Data source</label><select id="sourceSelect"><option value="fleet_api">Live fleet APIs</option><option value="replay">Sample API replay</option><option value="harsh_replay">Replay + harsh event</option><option value="demo">Synthetic demo</option><option value="external">Legacy 3-API pull</option><option value="push">Device / API push</option></select></div>
-          <div class="control-group hidden" id="fleetConnectionControl"><label for="fleetConnectionSelect">Connection</label><select id="fleetConnectionSelect"><option value="all">All connections</option></select></div>
-          <div class="control-group vehicle-control hidden" id="fleetVehicleControl"><label for="fleetVehicleSelect">Vehicle to monitor</label><select id="fleetVehicleSelect"><option value="">Choose a vehicle</option></select></div>
-          <div class="control-group vehicle-control hidden" id="scenarioControl"><label for="scenarioSelect">Replay route</label><select id="scenarioSelect"><option value="route_1">Route 1 · 075034653492</option><option value="route_2">Route 2 · 075034655158</option><option value="route_3">Route 3 · 075034664531</option></select></div>
-          <button class="button ghost connect-source" type="button" data-open-connections><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8 3 0 4m8-4v4M6 7h12v4a6 6 0 0 1-12 0V7Zm6 10v4"/></svg><span>Connections</span></button>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#101820" />
+    <title>CALIBR8 · Fleet Intelligence</title>
+    <script>
+      try {
+        var t = localStorage.getItem("calibr8-theme") || "system";
+        document.documentElement.dataset.theme =
+          t === "system"
+            ? matchMedia("(prefers-color-scheme: dark)").matches
+              ? "dark"
+              : "light"
+            : t;
+      } catch (e) {}
+    </script>
+    <link rel="stylesheet" href="/styles.css?v=7.0.0" />
+  </head>
+  <body>
+    <svg class="symbol-library" aria-hidden="true">
+      <defs>
+        <symbol id="i-grid" viewBox="0 0 24 24">
+          <rect x="3" y="3" width="7" height="7" rx="1.5" />
+          <rect x="14" y="3" width="7" height="7" rx="1.5" />
+          <rect x="3" y="14" width="7" height="7" rx="1.5" />
+          <rect x="14" y="14" width="7" height="7" rx="1.5" />
+        </symbol>
+        <symbol id="i-car" viewBox="0 0 24 24">
+          <path
+            d="m5 8 2-4h10l2 4M5 8h14a2 2 0 0 1 2 2v7H3v-7a2 2 0 0 1 2-2ZM3 17v3h4v-3m10 0v3h4v-3M6 12h2m8 0h2"
+          />
+        </symbol>
+        <symbol id="i-pulse" viewBox="0 0 24 24">
+          <path d="M2 12h5l3-8 5 16 3-8h4" />
+        </symbol>
+        <symbol id="i-alert" viewBox="0 0 24 24">
+          <path d="M12 3 2 21h20L12 3ZM12 9v5m0 3v.1" />
+        </symbol>
+        <symbol id="i-settings" viewBox="0 0 24 24">
+          <path d="M4 7h16M4 17h16" />
+          <circle cx="8" cy="7" r="3" />
+          <circle cx="16" cy="17" r="3" />
+        </symbol>
+        <symbol id="i-code" viewBox="0 0 24 24">
+          <path d="m8 6-6 6 6 6m8-12 6 6-6 6m-5-15-2 18" />
+        </symbol>
+        <symbol id="i-arrow" viewBox="0 0 24 24">
+          <path d="M5 12h14m-6-6 6 6-6 6" />
+        </symbol>
+        <symbol id="i-play" viewBox="0 0 24 24">
+          <path d="m8 4 12 8-12 8V4Z" />
+        </symbol>
+        <symbol id="i-refresh" viewBox="0 0 24 24">
+          <path d="M3 9a9 9 0 1 1 1 9M3 3v6h6" />
+        </symbol>
+        <symbol id="i-download" viewBox="0 0 24 24">
+          <path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5" />
+        </symbol>
+        <symbol id="i-sun" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="4" />
+          <path
+            d="M12 1v3m0 16v3M1 12h3m16 0h3M4 4l2 2m12 12 2 2M4 20l2-2M18 6l2-2"
+          />
+        </symbol>
+        <symbol id="i-moon" viewBox="0 0 24 24">
+          <path d="M20 15A9 9 0 0 1 9 4a9 9 0 1 0 11 11Z" />
+        </symbol>
+        <symbol id="i-menu" viewBox="0 0 24 24">
+          <path d="M3 6h18M3 12h18M3 18h18" />
+        </symbol>
+        <symbol id="i-plus" viewBox="0 0 24 24">
+          <path d="M12 4v16M4 12h16" />
+        </symbol>
+        <symbol id="i-check" viewBox="0 0 24 24">
+          <path d="m4 12 5 5L20 6" />
+        </symbol>
+        <symbol id="i-route" viewBox="0 0 24 24">
+          <circle cx="5" cy="5" r="2" />
+          <circle cx="19" cy="19" r="2" />
+          <path d="M7 5h7a4 4 0 0 1 0 8h-4a3 3 0 0 0 0 6h7" />
+        </symbol>
+      </defs>
+    </svg>
+    <a class="skip" href="#main">Skip to content</a>
+    <section id="boot" class="boot-screen" aria-live="polite">
+      <div class="brand-mark">C<span>8</span></div>
+      <div class="spinner"></div>
+      <h1>Opening your workspace</h1>
+      <p id="bootMessage">Checking your session…</p>
+      <button class="button secondary" id="bootRetry" type="button" hidden>
+        Retry
+      </button>
+    </section>
+    <section id="authView" class="auth-screen" hidden>
+      <div class="auth-story">
+        <a class="brand" href="/"
+          ><span class="brand-mark">C<span>8</span></span
+          ><span>CALIBR8<small>FLEET INTELLIGENCE</small></span></a
+        >
+        <div class="auth-copy">
+          <span class="eyebrow">UNDERSTAND EVERY JOURNEY</span>
+          <h1>Clarity at<br />every turn.</h1>
+          <p>
+            Vehicle data, intelligent braking detection, and physics that put
+            every signal in context.
+          </p>
+          <div class="auth-signal" aria-hidden="true">
+            <span></span><span></span><span></span><span></span><span></span
+            ><span></span><span></span><span></span><span></span><span></span
+            ><span></span><span></span>
+          </div>
+          <div class="auth-points">
+            <span>01 <b>Monitor your fleet</b></span
+            ><span>02 <b>Understand braking</b></span
+            ><span>03 <b>Act with confidence</b></span>
+          </div>
         </div>
-        <div class="source-summary"><span class="source-note"><span class="source-dot"></span><span id="sourceCaption">Loading data source…</span></span><button class="button ghost small sample-entry" id="runSampleBtn" type="button">Run sample replay</button><button class="text-button" id="modelSettingsToggle" type="button" aria-expanded="false" aria-controls="modelSettings"><span id="activeModelLabel">CALIBR8-AI · Balanced</span><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button></div>
-        <div class="model-settings hidden" id="modelSettings"><div class="control-group model-control"><label>Inference model</label><div class="segmented" role="group" aria-label="Choose model"><button class="seg active" data-model="new_ai" aria-pressed="true">New CALIBR8-AI</button><button class="seg" data-model="friend_gbm" aria-pressed="false">Friend GBM</button></div></div><div class="control-group"><label for="modeSelect">Detection mode</label><select id="modeSelect"><option value="balanced">Balanced</option><option value="safety">Safety / high recall</option></select></div><p class="model-note" id="modelNote">XGBoost + LightGBM ensemble · balanced threshold</p></div>
-      </section>
-      <section class="replay-control-bar hidden" id="replayControls" aria-label="Replay controls"><div class="replay-status"><span class="replay-icon"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8 4 12 8-12 8V4Z"/></svg></span><div><strong id="playbackStatus">Ready to start</strong><span id="nextTickText">Waiting for the next point</span></div><span class="sample-badge">RECORDED SAMPLE</span></div><div class="replay-actions"><button type="button" class="button primary small" id="startReplayBtn"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8 4 12 8-12 8V4Z"/></svg><span>Start</span></button><button type="button" class="button ghost small" id="pauseReplayBtn"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 4v16m8-16v16"/></svg><span>Pause</span></button><button type="button" class="button ghost small" id="restartReplayBtn" title="Restart replay"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9a9 9 0 1 1 1 9M3 3v6h6"/></svg><span>Restart</span></button><span class="control-divider"></span><label class="speed-control"><span class="sr-only">Playback speed</span><select id="playbackSpeed" aria-label="Playback speed"><option value="1">1× speed</option><option value="5" selected>5× speed</option><option value="10">10× speed</option><option value="30">30× speed</option></select></label><button type="button" class="button danger small" id="injectHarshBtn"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 2 21h20L12 3Z"/><path d="M12 9v5m0 3v.1"/></svg><span>Inject harsh event</span></button></div><label class="gap-toggle" for="compressGaps"><input type="checkbox" id="compressGaps" checked><span>Skip long source gaps</span></label><button type="button" class="text-button" id="showPayloadBtn">View API output →</button><div id="replayError" class="form-status error hidden" role="alert" aria-live="polite"></div></section>
-      <section class="view-panel" data-panel="overview" id="overviewView" aria-label="Live monitoring">
-        <div class="metrics-row"><article class="metric-card "><div class="metric-heading"><span>Current speed</span><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19a10 10 0 1 1 16 0M12 12l5-5M7 8l-1-1m6-3v2m7 2-1 1"/><circle cx="12" cy="12" r="1.5"/></svg></div><div class="metric-value"><b id="speed">—</b><span>km/h</span></div><div class="metric-caption">Latest vehicle reading</div></article><article class="metric-card "><div class="metric-heading"><span>Peak deceleration</span><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h5l4 7h7m-5-5 5 5-5 5M4 19h5"/></svg></div><div class="metric-value"><b id="peak">—</b><span>m/s²</span></div><div class="metric-caption">Current braking estimate</div></article><article class="metric-card "><div class="metric-heading"><span>Jerk</span><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12h4l3-8 6 16 3-8h4"/></svg></div><div class="metric-value"><b id="jerk">—</b><span>m/s³</span></div><div class="metric-caption">Rate of acceleration change</div></article><article class="metric-card "><div class="metric-heading"><span>Brake utilisation</span><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6l8-3Z"/><path d="m8.5 11.5 2.5 2.5 4.5-5"/></svg></div><div class="metric-value"><b id="util">—</b><span>%</span></div><div class="metric-caption">Available capacity used</div></article><article class="metric-card "><div class="metric-heading"><span>Trip distance</span><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="5" r="2"/><circle cx="19" cy="19" r="2"/><path d="M7 5h7a4 4 0 0 1 0 8h-4a3 3 0 0 0 0 6h7"/></svg></div><div class="metric-value"><b id="distance">—</b><span>km</span></div><div class="metric-caption">Distance this session</div></article><article class="metric-card events-metric"><div class="metric-heading"><span>Harsh events</span><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 2 21h20L12 3Z"/><path d="M12 9v5m0 3v.1"/></svg></div><div class="metric-value"><b id="harshCount">—</b><span></span></div><div class="metric-caption">Detected this session</div></article></div>
-        <div class="monitor-grid">
-          <article class="map-card panel"><div class="section-head"><div><div class="card-kicker">LIVE LOCATION</div><h2>Vehicle route</h2></div><div class="legend"><span><i class="dot route-dot"></i>Route</span><span><i class="dot harsh-dot"></i>Harsh event</span></div></div><div class="map-container"><div id="map" aria-label="Vehicle route map"></div><button class="map-center-button" id="centerMapBtn" type="button" title="Centre on vehicle" aria-label="Centre map on vehicle"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 0 1 14 0Z"/><circle cx="12" cy="10" r="2.5"/></svg></button></div><div class="map-footer"><span><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 0 1 14 0Z"/><circle cx="12" cy="10" r="2.5"/></svg><span id="coords">GPS: —</span></span><span id="routeInfo">0 route points</span></div></article>
-          <article class="risk-card panel"><div class="section-head"><div><div class="card-kicker">BRAKING ANALYSIS</div><h2>Safety assessment</h2></div><span class="analysis-icon"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6l8-3Z"/><path d="m8.5 11.5 2.5 2.5 4.5-5"/></svg></span></div><div class="risk-main"><span id="decisionBadge" class="decision">WAITING</span><div class="gauge-wrap"><svg viewBox="0 0 220 130" class="gauge" role="img" aria-label="Harsh braking probability"><path d="M25 110 A85 85 0 0 1 195 110" class="gauge-bg"/><path id="gaugeArc" d="M25 110 A85 85 0 0 1 195 110" class="gauge-value" pathLength="100"/></svg><div class="gauge-text"><strong id="riskPct">—</strong><span>Harsh-braking probability</span></div></div><div class="decision-panel"><h3 id="modelName">CALIBR8-AI</h3><p id="decisionText">Waiting for vehicle measurements.</p></div></div><div class="comparison-heading">MODEL COMPARISON<button class="text-button" type="button" data-view="insights">Details <svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M7 7h10v10"/></svg></button></div><div class="compare-mini"><div><span>CALIBR8-AI</span><strong id="newAiMini">—</strong></div><div><span>Friend GBM</span><strong id="friendMini">—</strong></div><div><span>Physics</span><strong id="physicsMini">—</strong></div></div></article>
-        </div>
-        <div class="chart-grid"><article class="chart-card panel"><div class="section-head"><div><div class="card-kicker">TELEMETRY</div><h2>Speed & braking</h2></div><span class="muted small-text">Latest 60 samples</span></div><div class="chart-container"><canvas id="telemetryChart" aria-label="Speed and peak deceleration history" role="img"></canvas></div></article><article class="context-card panel"><div class="section-head"><div><div class="card-kicker">DRIVING CONTEXT</div><h2>Conditions</h2></div><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12h4l3-8 6 16 3-8h4"/></svg></div><div class="context-grid"><div><span>Vehicle type</span><strong id="vehicle">—</strong></div><div><span>Road</span><strong id="road">—</strong></div><div><span>Traffic</span><strong id="traffic">—</strong></div><div><span>Weather</span><strong id="weather">—</strong></div><div><span>Surface</span><strong id="surface">—</strong></div><div><span>Road grade</span><strong id="grade">—</strong></div></div><div class="quality-note" id="qualityBadge">Waiting for data quality</div></article></div>
-      </section>
-      <section class="view-panel hidden" data-panel="fleet" id="fleetView" aria-label="Fleet">
-        <div class="fleet-panel panel hidden" id="fleetPanel"><div class="section-head"><div><div class="card-kicker">CONNECTED VEHICLES</div><h2>Your fleet</h2><p class="section-description" id="fleetSummary">0 APIs · 0 vehicles</p></div><div class="fleet-actions"><label class="search-field"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg><input id="fleetSearch" type="search" aria-label="Search fleet" placeholder="Find a vehicle…"></label><button class="button ghost" id="refreshFleetBtn" type="button"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9a9 9 0 1 1 1 9M3 3v6h6"/></svg><span>Refresh fleet</span></button></div></div><div class="fleet-grid" id="fleetGrid"><div class="empty-fleet">Connect a data provider to discover your vehicles.</div></div></div>
-        <div class="empty-view panel hidden" id="fleetUnavailable"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 8 2-4h10l2 4M5 8h14a2 2 0 0 1 2 2v7H3v-7a2 2 0 0 1 2-2Z"/><path d="M3 17v3h4v-3m10 0v3h4v-3M6 12h2m8 0h2"/></svg><h2>View your connected fleet</h2><p>Choose Live fleet APIs as the data source to discover and monitor vehicles.</p><button class="button primary" type="button" id="enableFleetBtn">Switch to live fleet APIs</button></div>
-      </section>
-      <section class="view-panel hidden" data-panel="events" id="eventsView" aria-label="Safety events"><article class="events-card panel"><div class="section-head"><div><div class="card-kicker">SAFETY LOG</div><h2>Harsh-braking events</h2><p class="section-description">Latest 50 events for the selected vehicle and trip.</p></div><label class="search-field"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg><input id="eventSearch" type="search" aria-label="Search safety events" placeholder="Search events…"></label></div><div class="table-wrap"><table><thead><tr><th>Time</th><th>Model</th><th>Probability</th><th>Speed</th><th>Peak decel.</th><th>Physics</th><th>Location</th></tr></thead><tbody id="eventRows"><tr><td colspan="7" class="empty">No harsh-braking events yet.</td></tr></tbody></table></div><div class="table-footer"><span id="eventCountLabel">0 events</span><span>Most recent first</span></div></article></section>
-      <section class="view-panel hidden" data-panel="insights" id="insightsView" aria-label="Models and physics"><div class="insights-grid"><article class="calculation-card panel"><div class="section-head"><div><div class="card-kicker">EXPLAINABLE PHYSICS</div><h2>Braking capacity</h2></div><span id="physicsLabel" class="small-badge">—</span></div><div class="calc-table"><div><span>Estimated friction, μ</span><strong id="mu">—</strong></div><div><span>Road angle, θ</span><strong id="angle">—</strong></div><div><span>Traction limit</span><strong id="traction">—</strong></div><div><span>Brake capability</span><strong id="capability">—</strong></div><div><span>Available deceleration</span><strong id="available">—</strong></div><div><span>Observed brake component</span><strong id="brakeObs">—</strong></div></div><div class="info-note"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10v.1"/></svg><p>Values use the vehicle profile and configured road conditions. GPS-derived braking is an estimate, rather than an accelerometer measurement.</p></div></article><article class="equations-card panel"><div class="section-head"><div><div class="card-kicker">MODEL EXPLANATION</div><h2>How the decision is made</h2></div></div><div class="equation-box"><span>Traction limit</span><code>a<sub>traction</sub> = μg cos(θ) + g sin(θ)</code><span>Available braking</span><code>a<sub>available</sub> = min(a<sub>traction</sub>, a<sub>capability</sub>)</code><span>Capacity used</span><code>u = a<sub>brake,observed</sub> / a<sub>available</sub></code></div><div class="band-row"><span><i></i>&lt;40% Normal</span><span><i></i>40–60% Mild</span><span><i></i>60–80% Harsh</span><span><i></i>≥80% Severe</span></div><div class="submodel" id="submodelInfo">Model details will appear after the first reading.</div></article></div>
-        <section class="api-grid" aria-label="Data pipeline status"><div class="api-card"><span class="api-icon"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12h4l3-8 6 16 3-8h4"/></svg></span><div><strong>Vehicle telemetry</strong><span id="telemetryStatus">Waiting for data</span></div><em id="telemetryLatency">—</em></div><div class="api-card"><span class="api-icon"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 0 1 14 0Z"/><circle cx="12" cy="10" r="2.5"/></svg></span><div><strong>GPS & route</strong><span id="gpsStatus">Waiting for data</span></div><em id="gpsLatency">—</em></div><div class="api-card"><span class="api-icon"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 8 2-4h10l2 4M5 8h14a2 2 0 0 1 2 2v7H3v-7a2 2 0 0 1 2-2Z"/><path d="M3 17v3h4v-3m10 0v3h4v-3M6 12h2m8 0h2"/></svg></span><div><strong>Driving context</strong><span id="contextStatus">Waiting for data</span></div><em id="contextLatency">—</em></div><div class="api-card"><span class="api-icon"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6l8-3Z"/><path d="m8.5 11.5 2.5 2.5 4.5-5"/></svg></span><div><strong>Model inference</strong><span id="inferenceStatus">Waiting for data</span></div><em id="inferenceLatency">—</em></div></section>
-        <details class="source-details panel"><summary><div><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8 6-6 6 6 6m8-12 6 6-6 6m-5-16-2 20"/></svg><span><strong>Source data & diagnostics</strong><small>Inspect the current payload and controlled test event.</small></span></div><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></summary><div class="replay-grid"><article class="api-output-card"><div class="section-head"><h3>Current API output</h3><div class="payload-actions"><span id="replayBadge" class="small-badge">waiting</span><button class="icon-button" id="copyPayloadBtn" type="button" title="Copy payload" aria-label="Copy API payload"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="13" rx="2"/><path d="M16 8V3H3v13h5"/></svg></button></div></div><div class="replay-meta"><div><span>Device</span><strong id="replayDevice">—</strong></div><div><span>Point</span><strong id="replayPoint">—</strong></div><div><span>Source interval</span><strong id="replayDelta">—</strong></div><div><span>Derived acceleration</span><strong id="replayAccel">—</strong></div></div><pre id="apiOutput" class="json-output">Waiting for source data…</pre></article><article class="harsh-output-card" id="harshOutputCard"><div class="section-head"><h3>Injected test event</h3><span id="harshReplayBadge" class="small-badge">not active</span></div><div id="harshOutput" class="harsh-output-empty">Use “Inject harsh event” to test the braking display.</div></article></div></details>
-      </section>
-      <footer class="workspace-footer"><span><i class="footer-dot"></i><span id="firestoreStatus">Waiting for connection</span></span><span id="updatedAt">Waiting for the first reading</span><span>CALIBR8 <span class="footer-version">/ 5.2</span></span></footer>
-    </main>
-  </div>
-</div>
-<div class="modal-backdrop hidden" id="apiManager">
-  <section class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="apiManagerTitle">
-    <div class="section-head"><div><div class="card-kicker">WORKSPACE SETTINGS</div><h3 id="apiManagerTitle">API connections</h3></div><button class="icon-button" id="closeApiManagerBtn" type="button" aria-label="Close connections"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6"/></svg></button></div>
-    <p class="manager-help">Connect your vehicle data provider, then discover and select the vehicles you want to monitor. Advanced field mapping is available below.</p>
-    <div id="connectionsList" class="connections-list"></div>
-    <form id="connectionForm" class="connection-form"><div class="form-section-title">Connection details</div>
-      <input type="hidden" id="connectionId">
-      <div class="form-grid">
-        <label><span>Connection name</span><input id="connectionName" required maxlength="80" placeholder="Fleet API - Klang"></label>
-        <label class="span-2"><span>API URL</span><input id="connectionUrl" required type="url" placeholder="https://provider.example.com/api/vehicles"></label>
-        <label class="span-2"><span>Request headers JSON <small>(optional; blank keeps saved headers when editing)</small></span><textarea id="connectionHeaders" rows="3" placeholder='{"Authorization":"Bearer ..."}'></textarea></label>
+        <p class="auth-foot">
+          Built for CALIBR8 · Models, physics & connected vehicles
+        </p>
       </div>
-      <details>
-        <summary>Field mapping & API format</summary>
-        <div class="form-grid details-grid">
-          <label><span>Root path</span><input id="rootPath" placeholder="data.items (blank = root)"></label>
-          <label><span>Device ID field</span><input id="mapDevice" value="deviceId"></label>
-          <label><span>Timestamp field</span><input id="mapTimestamp" value="dateTime"></label>
-          <label><span>Latitude field</span><input id="mapLat" value="latitude"></label>
-          <label><span>Longitude field</span><input id="mapLon" value="longitude"></label>
-          <label><span>Speed field</span><input id="mapSpeed" value="speed"></label>
-          <label><span>Direction field</span><input id="mapDirection" value="direction"></label>
-          <label><span>Timestamp format</span><select id="timestampFormat"><option value="epoch_seconds">Unix seconds</option><option value="epoch_milliseconds">Unix milliseconds</option><option value="iso">ISO date/time</option></select></label>
-          <label><span>Speed unit</span><select id="speedUnit"><option value="kmh">km/h</option><option value="mph">mph</option><option value="mps">m/s</option></select></label>
-          <label><span>Poll interval</span><select id="pollInterval"><option value="2">2 s</option><option value="5" selected>5 s</option><option value="10">10 s</option><option value="30">30 s</option><option value="60">60 s</option></select></label>
+      <div class="auth-form-side">
+        <select id="authTheme" aria-label="Appearance">
+          <option value="system">System theme</option>
+          <option value="light">Light theme</option>
+          <option value="dark">Dark theme</option>
+        </select>
+        <form id="loginForm" class="login-form">
+          <div class="eyebrow">YOUR WORKSPACE</div>
+          <h2>Welcome back</h2>
+          <p>Sign in with your existing Supabase account.</p>
+          <label for="email">Email address</label
+          ><input
+            id="email"
+            type="email"
+            autocomplete="username"
+            placeholder="you@company.com"
+            required
+          /><label for="password">Password</label>
+          <div class="password-wrap">
+            <input
+              id="password"
+              type="password"
+              autocomplete="current-password"
+              placeholder="Enter your password"
+              required
+            /><button
+              id="showPassword"
+              class="text-button"
+              type="button"
+              aria-label="Show password"
+              aria-pressed="false"
+            >
+              Show
+            </button>
+          </div>
+          <div id="authError" class="notice error" role="alert" hidden></div>
+          <button class="button primary full" id="loginButton" type="submit">
+            Sign in <svg class="icon"><use href="#i-arrow" /></svg>
+          </button>
+          <p class="login-help">
+            Need access? Ask your workspace administrator to create an account.
+          </p>
+        </form>
+        <span class="auth-version">CALIBR8 7 · Fleet Intelligence</span>
+      </div>
+    </section>
+    <div id="workspace" hidden>
+      <button
+        id="sidebarScrim"
+        class="sidebar-scrim"
+        type="button"
+        aria-label="Close navigation"
+        hidden
+      ></button>
+      <aside id="sidebar" class="sidebar">
+        <a class="brand" href="/"
+          ><span class="brand-mark">C<span>8</span></span
+          ><span>CALIBR8<small>FLEET INTELLIGENCE</small></span></a
+        ><span class="nav-label">WORKSPACE</span>
+        <nav aria-label="Workspace navigation">
+          <button data-view="overview" class="nav-item active" type="button">
+            <svg class="icon"><use href="#i-grid" /></svg>Overview
+          </button>
+          <button data-view="fleet" class="nav-item" type="button">
+            <svg class="icon"><use href="#i-car" /></svg>Fleet &
+            connections<span id="navFleetCount" class="nav-count">0</span>
+          </button>
+          <button data-view="events" class="nav-item" type="button">
+            <svg class="icon"><use href="#i-alert" /></svg>Safety events<span
+              id="navEventCount"
+              class="nav-count"
+              >0</span
+            >
+          </button>
+          <button data-view="models" class="nav-item" type="button">
+            <svg class="icon"><use href="#i-pulse" /></svg>Models & physics
+          </button>
+          <button data-view="data" class="nav-item" type="button">
+            <svg class="icon"><use href="#i-code" /></svg>API output
+          </button>
+        </nav>
+        <div class="sidebar-bottom">
+          <button data-view="settings" class="nav-item" type="button">
+            <svg class="icon"><use href="#i-settings" /></svg>Workspace settings
+          </button>
+          <div class="account">
+            <span id="avatar" class="avatar">U</span>
+            <div>
+              <strong>My workspace</strong><span id="accountEmail">—</span>
+            </div>
+            <button
+              id="logoutButton"
+              type="button"
+              class="text-button"
+              aria-label="Sign out"
+              title="Sign out"
+            >
+              ↗
+            </button>
+          </div>
         </div>
-      </details>
-      <details>
-        <summary>Default vehicle & driving context</summary>
-        <div class="form-grid details-grid">
-          <label><span>Vehicle type</span><select id="ctxVehicle"><option value="passenger_car">Passenger car</option><option value="van_mpv">Van / MPV</option><option value="pickup_4x4">Pickup 4x4</option><option value="small_lorry">Small lorry</option><option value="heavy_lorry">Heavy lorry</option><option value="bus">Bus</option></select></label>
-          <label><span>Road type</span><select id="ctxRoad"><option value="urban">Urban</option><option value="residential">Residential</option><option value="arterial">Arterial</option><option value="highway">Highway</option><option value="rural">Rural</option><option value="industrial">Industrial</option></select></label>
-          <label><span>Traffic</span><select id="ctxTraffic"><option value="medium">Medium</option><option value="low">Low</option><option value="high">High</option><option value="stop_go">Stop & go</option></select></label>
-          <label><span>Weather</span><select id="ctxWeather"><option value="clear">Clear</option><option value="cloudy">Cloudy</option><option value="light_rain">Light rain</option><option value="heavy_rain">Heavy rain</option><option value="fog">Fog</option></select></label>
-          <label><span>Road surface</span><select id="ctxSurface"><option value="dry_asphalt">Dry asphalt</option><option value="wet_asphalt">Wet asphalt</option><option value="rough_asphalt">Rough asphalt</option><option value="gravel">Gravel</option><option value="pothole_rough">Pothole / rough</option><option value="painted_marking">Painted marking</option></select></label>
-          <label><span>Road grade (%)</span><input id="ctxGrade" type="number" step="0.1" min="-20" max="20" value="0"></label>
+      </aside>
+      <div class="workspace-main">
+        <header class="topbar">
+          <div class="breadcrumbs">
+            <button
+              id="menuButton"
+              class="icon-button mobile-only"
+              aria-label="Open navigation"
+              aria-expanded="false"
+              aria-controls="sidebar"
+              type="button"
+            >
+              <svg class="icon"><use href="#i-menu" /></svg></button
+            ><span>Workspace</span><span class="crumb-divider">/</span
+            ><strong id="breadcrumb">Overview</strong>
+          </div>
+          <div class="topbar-right">
+            <span id="sourceBadge" class="pill">Sample session</span
+            ><label class="sr-only" for="themeSelect">Appearance</label
+            ><select id="themeSelect" class="compact-select">
+              <option value="system">Auto</option>
+              <option value="light">Light</option>
+              <option value="dark">Dark</option>
+            </select>
+          </div>
+        </header>
+        <main id="main" tabindex="-1">
+          <div class="page-heading">
+            <div>
+              <div class="eyebrow">CALIBR8 INTELLIGENCE</div>
+              <h1 id="pageTitle">Fleet overview</h1>
+              <p id="pageDescription">
+                A clear view of your vehicle, its journey, and every braking
+                signal.
+              </p>
+            </div>
+            <button class="button secondary" type="button" id="headerSample">
+              <svg class="icon"><use href="#i-play" /></svg
+              ><span>Run sample replay</span>
+            </button>
+          </div>
+          <section class="source-panel panel" aria-labelledby="sourceHeading">
+            <div class="source-top">
+              <h2 id="sourceHeading">
+                <span class="live-dot"></span>Monitoring source
+              </h2>
+              <span id="phaseBadge" class="status ready">Ready to start</span>
+            </div>
+            <div class="source-controls">
+              <label class="field"
+                >Data source<select id="sourceSelect">
+                  <option value="sample">Sample API replay</option>
+                  <option value="fleet">Live fleet APIs</option>
+                  <option value="device">Device / API push</option>
+                  <option value="synthetic">Synthetic drive</option>
+                  <option value="legacy" hidden>Legacy 3-API pull</option>
+                </select></label
+              >
+              <label class="field" id="routeField"
+                >Recorded route<select id="routeSelect">
+                  <option value="route_1">Route 1 · 075034653492</option>
+                  <option value="route_2">Route 2 · 075034655158</option>
+                  <option value="route_3">Route 3 · 075034664531</option>
+                </select></label
+              >
+              <label class="field" id="vehicleField" hidden
+                >Vehicle<select id="vehicleSelect">
+                  <option value="">Refresh to discover vehicles</option>
+                </select></label
+              >
+              <label class="field" id="deviceField" hidden
+                >Device ID<input
+                  id="deviceId"
+                  value="device_vehicle"
+                  maxlength="100"
+                  spellcheck="false"
+              /></label>
+              <label class="field model-select"
+                >Decision model<select id="modelSelect">
+                  <option value="new_ai">CALIBR8-AI ensemble</option>
+                  <option value="friend_gbm">Friend GBM · 4 classes</option>
+                </select></label
+              >
+              <label class="field mode-select"
+                >Detection mode<select id="modeSelect">
+                  <option value="balanced">Balanced</option>
+                  <option value="safety">Safety / high recall</option>
+                </select></label
+              >
+            </div>
+            <div class="source-description">
+              <p id="sourceDescription">
+                Recorded GPS data with derived sample dynamics. No live API
+                connection is needed.
+              </p>
+              <button
+                id="sourceFleetRefresh"
+                type="button"
+                class="text-button"
+                hidden
+              >
+                Refresh vehicles</button
+              ><button
+                type="button"
+                class="text-button"
+                data-action="add-connection"
+                id="sourceAddConnection"
+                hidden
+              >
+                Add connection →
+              </button>
+            </div>
+            <div class="playback">
+              <div class="playback-buttons">
+                <button id="startButton" class="button primary" type="button">
+                  <svg class="icon"><use href="#i-play" /></svg
+                  ><span id="startLabel">Start replay</span></button
+                ><button
+                  id="pauseButton"
+                  class="button secondary"
+                  type="button"
+                  disabled
+                >
+                  Pause</button
+                ><button id="stepButton" class="button secondary" type="button">
+                  Next point</button
+                ><button
+                  id="resetButton"
+                  class="icon-button"
+                  type="button"
+                  title="Start a new session"
+                  aria-label="Start a new session"
+                >
+                  <svg class="icon"><use href="#i-refresh" /></svg></button
+                ><span class="toolbar-divider" id="sampleDivider"></span
+                ><button
+                  id="injectButton"
+                  class="button warning-button"
+                  type="button"
+                >
+                  <svg class="icon"><use href="#i-alert" /></svg>Inject harsh
+                  event
+                </button>
+              </div>
+              <div class="playback-options" id="sampleOptions">
+                <label class="check-field" id="harshField"
+                  ><input id="harshToggle" type="checkbox" />Auto harsh
+                  event</label
+                ><label class="sr-only" for="speedSelect">Playback speed</label
+                ><select id="speedSelect" class="compact-select">
+                  <option value="1">1× speed</option>
+                  <option value="5">5× speed</option>
+                  <option value="10" selected>10× speed</option>
+                  <option value="30">30× speed</option></select
+                ><label class="check-field"
+                  ><input id="compressGaps" type="checkbox" checked />Compress
+                  gaps</label
+                >
+              </div>
+            </div>
+            <div class="source-bottom">
+              <span id="playbackMessage" role="status"
+                >Choose a route and press Start. Your sample session is separate
+                from live history.</span
+              ><button id="viewOutput" type="button" class="text-button">
+                View API output <span aria-hidden="true">↗</span>
+              </button>
+            </div>
+            <div
+              id="playbackError"
+              class="notice error"
+              role="alert"
+              hidden
+            ></div>
+            <div
+              id="saveWarning"
+              class="notice warning"
+              role="status"
+              hidden
+            ></div>
+          </section>
+          <section data-panel="overview" id="overviewPanel">
+            <div class="metrics-grid">
+              <article class="metric-card">
+                <div>
+                  <span>Current speed</span
+                  ><svg class="icon"><use href="#i-car" /></svg>
+                </div>
+                <p><strong id="speedValue">—</strong><span>km/h</span></p>
+                <small>Latest vehicle reading</small>
+              </article>
+              <article class="metric-card">
+                <div>
+                  <span>Peak deceleration</span
+                  ><svg class="icon"><use href="#i-pulse" /></svg>
+                </div>
+                <p><strong id="peakValue">—</strong><span>m/s²</span></p>
+                <small id="peakCaption">Current braking estimate</small>
+              </article>
+              <article class="metric-card">
+                <div>
+                  <span>Jerk</span
+                  ><svg class="icon"><use href="#i-pulse" /></svg>
+                </div>
+                <p><strong id="jerkValue">—</strong><span>m/s³</span></p>
+                <small>Acceleration change</small>
+              </article>
+              <article class="metric-card">
+                <div>
+                  <span>Brake utilisation</span
+                  ><svg class="icon"><use href="#i-check" /></svg>
+                </div>
+                <p><strong id="utilValue">—</strong><span>%</span></p>
+                <small>Available braking used</small>
+              </article>
+              <article class="metric-card">
+                <div>
+                  <span>Trip distance</span
+                  ><svg class="icon"><use href="#i-route" /></svg>
+                </div>
+                <p><strong id="distanceValue">—</strong><span>km</span></p>
+                <small>Current session</small>
+              </article>
+              <article class="metric-card">
+                <div>
+                  <span>Harsh events</span
+                  ><svg class="icon"><use href="#i-alert" /></svg>
+                </div>
+                <p><strong id="eventValue">—</strong></p>
+                <small>Detected in this session</small>
+              </article>
+            </div>
+            <div class="overview-grid">
+              <article class="panel route-card">
+                <div class="panel-heading">
+                  <div>
+                    <span class="eyebrow">JOURNEY</span>
+                    <h2>Vehicle route</h2>
+                  </div>
+                  <span id="pointCount" class="muted small">No route yet</span>
+                </div>
+                <div class="map-wrap">
+                  <div id="routeMap" class="route-map">
+                    <div class="map-empty">
+                      <svg class="icon"><use href="#i-route" /></svg
+                      ><strong>Your journey starts here</strong
+                      ><span>Start a sample or select a live vehicle.</span>
+                    </div>
+                  </div>
+                  <div class="map-buttons">
+                    <button
+                      id="mapZoomIn"
+                      class="icon-button"
+                      type="button"
+                      aria-label="Zoom in"
+                    >
+                      +</button
+                    ><button
+                      id="mapZoomOut"
+                      class="icon-button"
+                      type="button"
+                      aria-label="Zoom out"
+                    >
+                      −</button
+                    ><button
+                      id="mapFit"
+                      class="icon-button"
+                      type="button"
+                      title="Fit route"
+                      aria-label="Fit route"
+                    >
+                      ⌖
+                    </button>
+                  </div>
+                  <a
+                    class="map-credit"
+                    href="https://www.openstreetmap.org/copyright"
+                    target="_blank"
+                    rel="noopener"
+                    >© OpenStreetMap</a
+                  >
+                </div>
+                <div class="map-footer">
+                  <span id="mapNote">Start a source to see its GPS route.</span
+                  ><span id="coordinates">GPS —, —</span>
+                </div>
+              </article>
+              <article class="panel risk-card">
+                <div class="panel-heading">
+                  <div>
+                    <span class="eyebrow">BRAKING INTELLIGENCE</span>
+                    <h2>Current assessment</h2>
+                  </div>
+                  <span id="decisionPill" class="pill neutral">Waiting</span>
+                </div>
+                <div class="risk-main">
+                  <div class="risk-ring" id="riskRing" style="--risk: 0%">
+                    <div>
+                      <strong id="riskValue">—</strong
+                      ><span>HARSH / SEVERE SCORE</span>
+                    </div>
+                  </div>
+                  <h3 id="decisionTitle">Ready for your first reading</h3>
+                  <p id="decisionText">
+                    Start a source to calculate the braking decision.
+                  </p>
+                </div>
+                <div class="model-mini">
+                  <div>
+                    <span>CALIBR8-AI</span><strong id="aiValue">—</strong>
+                  </div>
+                  <div>
+                    <span>Friend GBM</span><strong id="friendValue">—</strong>
+                  </div>
+                  <div>
+                    <span>Physics</span><strong id="physicsValue">—</strong>
+                  </div>
+                </div>
+              </article>
+            </div>
+            <div class="overview-grid chart-row">
+              <article class="panel chart-card">
+                <div class="panel-heading">
+                  <div>
+                    <span class="eyebrow">TELEMETRY</span>
+                    <h2>Speed & braking</h2>
+                  </div>
+                  <div class="chart-legend">
+                    <span><i></i>Speed · km/h</span
+                    ><span><i></i>Decel. · m/s²</span>
+                  </div>
+                </div>
+                <div id="telemetryPlot" class="telemetry-plot">
+                  <div class="chart-empty">
+                    Your speed and braking history will appear here.
+                  </div>
+                </div>
+                <div class="chart-footer">
+                  Latest 60 samples
+                  <span id="updatedTime">Waiting for data</span>
+                </div>
+              </article>
+              <article class="panel">
+                <div class="panel-heading">
+                  <div>
+                    <span class="eyebrow">DRIVING CONTEXT</span>
+                    <h2>Road & conditions</h2>
+                  </div>
+                  <svg class="icon muted"><use href="#i-sun" /></svg>
+                </div>
+                <dl id="contextGrid" class="context-grid">
+                  <div>
+                    <dt>Vehicle</dt>
+                    <dd>—</dd>
+                  </div>
+                  <div>
+                    <dt>Road</dt>
+                    <dd>—</dd>
+                  </div>
+                  <div>
+                    <dt>Traffic</dt>
+                    <dd>—</dd>
+                  </div>
+                  <div>
+                    <dt>Weather</dt>
+                    <dd>—</dd>
+                  </div>
+                  <div>
+                    <dt>Surface</dt>
+                    <dd>—</dd>
+                  </div>
+                  <div>
+                    <dt>Grade</dt>
+                    <dd>—</dd>
+                  </div>
+                </dl>
+                <p id="qualityNote" class="quality-note">
+                  Measurement quality appears when data is available.
+                </p>
+              </article>
+            </div>
+          </section>
+          <section data-panel="fleet" id="fleetPanel" hidden>
+            <div class="section-title">
+              <div>
+                <h2>Your API connections</h2>
+                <p>
+                  Save several APIs, discover their vehicles, and choose one to
+                  monitor.
+                </p>
+              </div>
+              <button
+                class="button primary"
+                data-action="add-connection"
+                type="button"
+              >
+                <svg class="icon"><use href="#i-plus" /></svg>Add connection
+              </button>
+            </div>
+            <div
+              id="connectionsError"
+              class="notice error"
+              role="alert"
+              hidden
+            ></div>
+            <div id="connectionList" class="connections-grid"></div>
+            <div class="panel fleet-panel">
+              <div class="panel-heading">
+                <div>
+                  <span class="eyebrow">CONNECTED VEHICLES</span>
+                  <h2>
+                    Available fleet <span id="fleetTotal" class="muted">0</span>
+                  </h2>
+                </div>
+                <div class="inline-actions">
+                  <input
+                    id="fleetSearch"
+                    type="search"
+                    aria-label="Search fleet"
+                    placeholder="Search vehicles…"
+                  /><button
+                    id="discoverButton"
+                    class="button secondary"
+                    type="button"
+                  >
+                    <svg class="icon"><use href="#i-refresh" /></svg>Refresh
+                    fleet
+                  </button>
+                </div>
+              </div>
+              <div
+                id="fleetError"
+                class="notice error"
+                role="alert"
+                hidden
+              ></div>
+              <div id="discoveryStatus" class="discovery-status"></div>
+              <div id="vehicleList" class="vehicle-grid"></div>
+            </div>
+          </section>
+          <section data-panel="events" hidden>
+            <article class="panel">
+              <div class="panel-heading">
+                <div>
+                  <span class="eyebrow">SAFETY LOG</span>
+                  <h2>
+                    Braking events <span id="eventsTotal" class="muted">0</span>
+                  </h2>
+                </div>
+                <div class="inline-actions">
+                  <input
+                    id="eventSearch"
+                    type="search"
+                    aria-label="Search safety events"
+                    placeholder="Search events…"
+                  /><button
+                    id="exportButton"
+                    class="button secondary"
+                    type="button"
+                  >
+                    <svg class="icon"><use href="#i-download" /></svg>Export CSV
+                  </button>
+                </div>
+              </div>
+              <div class="table-scroll">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Time</th>
+                      <th>Model</th>
+                      <th>Harsh score</th>
+                      <th>Speed</th>
+                      <th>Peak decel.</th>
+                      <th>Physics</th>
+                      <th>Location</th>
+                    </tr>
+                  </thead>
+                  <tbody id="eventRows">
+                    <tr>
+                      <td colspan="7" class="empty-cell">
+                        No events yet. Run the sample and inject a harsh event
+                        to test detection.
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <p class="table-note" id="eventsNote">
+                Sample events belong to this browser session. Live events are
+                saved when the database is available.
+              </p>
+            </article>
+          </section>
+          <section data-panel="models" hidden>
+            <div class="models-grid">
+              <article class="panel">
+                <div class="panel-heading">
+                  <div>
+                    <span class="eyebrow">SIDE BY SIDE</span>
+                    <h2>AI model comparison</h2>
+                  </div>
+                </div>
+                <div id="modelComparison" class="model-comparison"></div>
+                <p class="info-note">
+                  CALIBR8-AI uses the configured balanced or safety threshold.
+                  Friend GBM uses its four-class prediction. Both models
+                  evaluate the same measurement.
+                </p>
+              </article>
+              <article class="panel">
+                <div class="panel-heading">
+                  <div>
+                    <span class="eyebrow">PHYSICS INFORMED</span>
+                    <h2>Braking capability</h2>
+                  </div>
+                </div>
+                <dl id="physicsGrid" class="physics-grid"></dl>
+                <details class="formula-details">
+                  <summary>How utilisation is calculated</summary>
+                  <p>
+                    Available deceleration is the smaller of tyre traction and
+                    vehicle braking capability. Observed braking removes
+                    estimated aerodynamic drag, rolling resistance and the
+                    road-grade contribution.
+                  </p>
+                  <code
+                    >u = observed brake component / available deceleration</code
+                  >
+                  <p>
+                    Physics label thresholds: normal &lt; 40%, mild &lt; 60%,
+                    harsh &lt; 80%, then severe.
+                  </p>
+                </details>
+              </article>
+            </div>
+          </section>
+          <section data-panel="data" hidden>
+            <article class="panel api-panel">
+              <div class="panel-heading">
+                <div>
+                  <span class="eyebrow">SOURCE RESPONSE</span>
+                  <h2>API output</h2>
+                </div>
+                <div class="inline-actions">
+                  <label class="sr-only" for="payloadSelect"
+                    >Output format</label
+                  ><select id="payloadSelect">
+                    <option value="raw">Raw source response</option>
+                    <option value="frame">
+                      Complete measurement snapshot
+                    </option></select
+                  ><button
+                    id="copyOutput"
+                    class="button secondary"
+                    type="button"
+                  >
+                    Copy JSON
+                  </button>
+                </div>
+              </div>
+              <div class="api-explainer">
+                <span id="payloadDescription"
+                  >Run a source to inspect its most recent response.</span
+                ><span class="pill" id="payloadBadge">Waiting</span>
+              </div>
+              <pre id="apiOutput" tabindex="0">
+No response yet. Press Start to read your selected source.</pre
+              >
+            </article>
+            <article class="panel sample-api-card">
+              <div>
+                <span class="eyebrow">TEST AN API CONNECTION</span>
+                <h2>Rotating sample endpoint</h2>
+                <p>
+                  This public endpoint returns a recorded sample point every
+                  five seconds. Use it to test vehicle discovery and field
+                  mapping.
+                </p>
+                <code id="sampleEndpoint"></code>
+              </div>
+              <button id="copyEndpoint" class="button secondary" type="button">
+                Copy URL
+              </button>
+            </article>
+          </section>
+          <section data-panel="settings" hidden>
+            <div class="settings-grid">
+              <article class="panel settings-card">
+                <span class="eyebrow">MAKE IT YOURS</span>
+                <h2>Appearance</h2>
+                <p>
+                  Choose a theme for the entire workspace and sign-in screen.
+                </p>
+                <div class="theme-cards">
+                  <button data-theme="light" type="button">
+                    <span class="theme-preview light-preview"></span
+                    ><strong>Light</strong><small>Clear & bright</small></button
+                  ><button data-theme="dark" type="button">
+                    <span class="theme-preview dark-preview"></span
+                    ><strong>Dark</strong
+                    ><small>Easy on the eyes</small></button
+                  ><button data-theme="system" type="button">
+                    <span class="theme-preview system-preview"></span
+                    ><strong>System</strong><small>Follow your device</small>
+                  </button>
+                </div>
+              </article>
+              <article class="panel settings-card">
+                <span class="eyebrow">WORKSPACE HEALTH</span>
+                <h2>Connection check</h2>
+                <p>
+                  Check authentication, database access, and the installed
+                  database functions.
+                </p>
+                <button
+                  id="diagnosticsButton"
+                  class="button secondary"
+                  type="button"
+                >
+                  Check connection
+                </button>
+                <div
+                  id="diagnosticsResult"
+                  class="notice"
+                  role="status"
+                  hidden
+                ></div>
+                <dl class="settings-facts">
+                  <div>
+                    <dt>Application</dt>
+                    <dd>CALIBR8 7.0.0</dd>
+                  </div>
+                  <div>
+                    <dt>Authentication</dt>
+                    <dd>Supabase · server-managed session</dd>
+                  </div>
+                  <div>
+                    <dt>Sample playback</dt>
+                    <dd>Independent from live storage</dd>
+                  </div>
+                </dl>
+              </article>
+            </div>
+          </section>
+          <footer class="workspace-footer">
+            <span
+              ><span class="footer-dot"></span>CALIBR8 Fleet Intelligence</span
+            ><span id="footerSource"
+              >Sample session · not a live vehicle feed</span
+            ><span>7.0.0</span>
+          </footer>
+        </main>
+      </div>
+    </div>
+    <dialog id="connectionDialog" aria-labelledby="connectionTitle">
+      <div class="dialog-header">
+        <div>
+          <span class="eyebrow">LIVE DATA</span>
+          <h2 id="connectionTitle">Add API connection</h2>
         </div>
-      </details>
-      <div class="form-actions"><label class="enabled-check"><input id="connectionEnabled" type="checkbox" checked> Enabled</label><button type="button" class="button ghost" id="clearConnectionFormBtn">New connection</button><button type="submit" class="button">Save connection</button></div>
-      <div id="connectionFormStatus" class="form-status"></div>
-    </form>
-  </section>
-</div>
-
-
-<div class="auth-gate" id="authGate"><div class="auth-brand-panel"><a class="brand" href="#" aria-label="CALIBR8"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 36 36"><path d="M25 9H15a9 9 0 0 0 0 18h10" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="square"/><path d="m22 13 6 5-6 5M13 18h14" fill="none" stroke="currentColor" stroke-width="3"/></svg></span><span class="brand-name">CALIBR<span>8</span><small>FLEET INTELLIGENCE</small></span></a><div class="auth-intro"><span class="auth-eyebrow">FLEET INTELLIGENCE, EXPLAINED.</span><h2>Every journey.<br>A clearer picture.</h2><p>Bring vehicle telemetry, braking physics and AI insights together in one focused workspace.</p><div class="auth-illustration" aria-hidden="true"><div class="auth-route-line"></div><span class="route-node node-one"></span><span class="route-node node-two"></span><span class="route-node node-three"></span><div class="auth-floating-card"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6l8-3Z"/><path d="m8.5 11.5 2.5 2.5 4.5-5"/></svg><div><strong>Clarity at every turn</strong><span>Physics-informed fleet monitoring</span></div></div><div class="auth-coordinate">03.1390° N &nbsp; 101.6869° E</div></div></div><span class="auth-brand-footer">CALIBR8 · Fleet operations workspace</span></div><div class="auth-form-side"><div class="auth-theme"><div class="theme-switch" role="group" aria-label="Appearance"><button type="button" data-theme-choice="light" aria-pressed="false" title="Light theme"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg><span>Light</span></button><button type="button" data-theme-choice="dark" aria-pressed="false" title="Dark theme"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 13A9 9 0 0 1 11 3a9 9 0 1 0 10 10Z"/></svg><span>Dark</span></button><button type="button" data-theme-choice="system" aria-pressed="false" title="Auto theme"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8m-4-4v4"/></svg><span>Auto</span></button></div></div><form class="auth-card" id="authForm"><span class="auth-lock"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V6a4 4 0 0 1 8 0v4"/></svg></span><div class="eyebrow">YOUR WORKSPACE</div><h1>Welcome back.</h1><p>Sign in to monitor your fleet and review safety insights.</p><label for="authEmail">Email address</label><input id="authEmail" type="email" autocomplete="username" placeholder="you@company.com" required><label for="authPassword">Password</label><div class="password-field"><input id="authPassword" type="password" minlength="6" autocomplete="current-password" placeholder="Enter your password" required><button type="button" id="passwordToggle" class="icon-button" aria-label="Show password" aria-pressed="false"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg></button></div><div class="auth-actions"><button class="button primary" type="submit"><span>Sign in to workspace</span><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M7 7h10v10"/></svg></button><button class="button ghost hidden" type="button" id="createAccountBtn">Create account</button></div><button class="auth-demo hidden" type="button" id="anonymousBtn">Use anonymous demo workspace</button><div id="authMessage" class="form-status" role="status" aria-live="polite"></div><div class="auth-access-note"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6l8-3Z"/><path d="m8.5 11.5 2.5 2.5 4.5-5"/></svg><span>Access is managed by your organization administrator.</span></div></form><div class="auth-bottom-note">One workspace. Your vehicles. The complete picture.</div></div></div>
-<div class="toast-region" id="toastRegion" role="status" aria-live="polite" aria-atomic="true"></div>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
-<script type="module" src="/app.js?v=5.2.2-replay"></script>
-</body>
+        <button
+          id="closeDialog"
+          class="icon-button"
+          type="button"
+          aria-label="Close connection form"
+        >
+          ×
+        </button>
+      </div>
+      <form id="connectionForm">
+        <p class="muted">
+          Connect a JSON vehicle feed. Saved request headers are encrypted on
+          the server.
+        </p>
+        <input id="connectionId" type="hidden" />
+        <div class="form-grid">
+          <label class="field"
+            >Connection name<input
+              id="connectionName"
+              required
+              maxlength="80"
+              placeholder="e.g. Customer fleet" /></label
+          ><label class="field"
+            >API URL<input
+              id="connectionUrl"
+              required
+              type="url"
+              placeholder="https://api.example.com/vehicles"
+          /></label>
+        </div>
+        <details id="advancedConnection">
+          <summary>Field mapping & request settings</summary>
+          <div class="form-grid">
+            <label class="field wide"
+              >Request headers · JSON<textarea
+                id="connectionHeaders"
+                rows="3"
+                placeholder='{"Authorization":"Bearer YOUR_TOKEN"}'
+                spellcheck="false"
+              ></textarea
+              ><small id="headerHelp"
+                >Optional. Use an empty object to clear saved headers.</small
+              ></label
+            ><label class="field"
+              >Record list path<input
+                id="rootPath"
+                placeholder="Auto-detect, or e.g. data.vehicles" /></label
+            ><label class="field"
+              >Poll interval · seconds<input
+                id="pollInterval"
+                type="number"
+                min="1"
+                max="300"
+                value="5"
+                required /></label
+            ><label class="field"
+              >Device ID field<input
+                id="mapDevice"
+                value="deviceId"
+                required /></label
+            ><label class="field"
+              >Timestamp field<input
+                id="mapTimestamp"
+                value="dateTime"
+                required /></label
+            ><label class="field"
+              >Latitude field<input
+                id="mapLat"
+                value="latitude"
+                required /></label
+            ><label class="field"
+              >Longitude field<input
+                id="mapLon"
+                value="longitude"
+                required /></label
+            ><label class="field"
+              >Speed field<input id="mapSpeed" value="speed" required /></label
+            ><label class="field"
+              >Heading field<input id="mapDirection" value="direction" /></label
+            ><label class="field"
+              >Timestamp format<select id="timestampFormat">
+                <option value="epoch_seconds">Unix seconds</option>
+                <option value="epoch_milliseconds">Unix milliseconds</option>
+                <option value="iso">ISO 8601</option>
+              </select></label
+            ><label class="field"
+              >Speed units<select id="speedUnit">
+                <option value="kmh">km/h</option>
+                <option value="mph">mph</option>
+                <option value="mps">m/s</option>
+              </select></label
+            >
+          </div>
+        </details>
+        <details>
+          <summary>Default driving conditions</summary>
+          <div class="form-grid">
+            <label class="field"
+              >Vehicle type<select id="ctxVehicle">
+                <option value="passenger_car">Passenger car</option>
+                <option value="van_mpv">Van / MPV</option>
+                <option value="pickup_4x4">Pickup / 4×4</option>
+                <option value="small_lorry">Small lorry</option>
+                <option value="heavy_lorry">Heavy lorry</option>
+                <option value="bus">Bus</option>
+              </select></label
+            ><label class="field"
+              >Road type<select id="ctxRoad">
+                <option value="urban">Urban</option>
+                <option value="residential">Residential</option>
+                <option value="arterial">Arterial</option>
+                <option value="highway">Highway</option>
+                <option value="rural">Rural</option>
+                <option value="industrial">Industrial</option>
+              </select></label
+            ><label class="field"
+              >Traffic<select id="ctxTraffic">
+                <option value="medium">Medium</option>
+                <option value="low">Low</option>
+                <option value="high">High</option>
+                <option value="stop_go">Stop & go</option>
+              </select></label
+            ><label class="field"
+              >Weather<select id="ctxWeather">
+                <option value="clear">Clear</option>
+                <option value="cloudy">Cloudy</option>
+                <option value="light_rain">Light rain</option>
+                <option value="heavy_rain">Heavy rain</option>
+                <option value="fog">Fog</option>
+              </select></label
+            ><label class="field"
+              >Road surface<select id="ctxSurface">
+                <option value="dry_asphalt">Dry asphalt</option>
+                <option value="wet_asphalt">Wet asphalt</option>
+                <option value="rough_asphalt">Rough asphalt</option>
+                <option value="gravel">Gravel</option>
+                <option value="pothole_rough">Potholes / rough</option>
+                <option value="painted_marking">Painted marking</option>
+              </select></label
+            ><label class="field"
+              >Road grade · %<input
+                id="ctxGrade"
+                type="number"
+                min="-20"
+                max="20"
+                step="0.1"
+                value="0"
+                required
+            /></label>
+          </div>
+        </details>
+        <label class="check-field enabled-check"
+          ><input id="connectionEnabled" type="checkbox" checked />Enable this
+          connection</label
+        >
+        <div id="connectionMessage" class="notice" role="status" hidden></div>
+        <div class="dialog-actions">
+          <button id="cancelDialog" class="button secondary" type="button">
+            Cancel</button
+          ><button
+            id="saveConnectionButton"
+            class="button primary"
+            type="submit"
+          >
+            Save connection
+          </button>
+        </div>
+      </form>
+    </dialog>
+    <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+    <noscript
+      ><p class="notice error">
+        JavaScript is required to use the dashboard.
+      </p></noscript
+    >
+    <script type="module" src="/js/app.js?v=7.0.0"></script>
+    <script>
+      setTimeout(function () {
+        if (!window.CALIBR8_READY) {
+          document.getElementById("bootMessage").textContent =
+            "The application could not finish loading. Check the server and retry.";
+          var b = document.getElementById("bootRetry");
+          b.hidden = false;
+          b.onclick = function () {
+            location.reload();
+          };
+        }
+      }, 15000);
+    </script>
+  </body>
 </html>

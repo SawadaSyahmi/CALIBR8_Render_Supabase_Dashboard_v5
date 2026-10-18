@@ -1,130 +1,63 @@
-# Deploy CALIBR8 v5.2.2 — Render + Supabase
+# Deploy the complete CALIBR8 project
 
-For the latest replay/startup patch to an existing deployment, follow `REPLAY_FIX.md`. The earlier sign-in and UI changes are described in `LOGIN_FIX.md` and `UI_REDESIGN.md`. For a new deployment, follow the steps below.
+For an existing deployment, follow `START_HERE.md`. This page covers a new deployment.
 
-## Part A — Create Supabase
+## Supabase
 
-### 1. Create project
-Create a project at Supabase and keep it on the Free plan.
+1. Create a Supabase project and run `supabase_schema.sql` in SQL Editor.
+2. Enable Email/Password authentication. Create the authorized user manually, with email confirmed as appropriate for your workspace.
+3. Disable public sign-up; all authenticated users share this one organization's data.
+4. Copy the project URL and publishable key. An existing anon key is also accepted.
 
-### 2. Create database schema
-Open **SQL Editor**, paste all of `supabase_schema.sql`, and run it once.
+## Encryption key
 
-### 3. Configure authentication
-Open **Authentication > Providers** and enable Email/Password.
+Generate a Fernet key locally if this is a new deployment:
 
-For a single-customer deployment, disable public self-sign-up if desired, then create the authorized user from the Supabase dashboard.
-
-### 4. Copy project credentials
-Open **Project Settings / API** and copy:
-
-- Project URL -> `SUPABASE_URL`
-- anon/public key -> `SUPABASE_ANON_KEY`
-- service role key -> `SUPABASE_SERVICE_ROLE_KEY`
-
-**Never put the service-role key in frontend code or GitHub.**
-
-## Part B — Generate CALIBR8 encryption key
-
-On your PC:
-
-```powershell
-pip install cryptography
+```sh
 python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
 ```
 
-Save the result as `CONNECTION_ENCRYPTION_KEY` on Render. Keep it permanently; changing it prevents previously saved customer API headers from being decrypted.
+Keep it as `CONNECTION_ENCRYPTION_KEY` on Render. If upgrading, retain your existing key.
 
-## Part C — Upload project to GitHub
+## Render
 
-Create a repository and push this folder. The included `.gitignore` excludes local environment files.
+Push this complete project folder's contents to GitHub. The repository root should contain `render.yaml`, `public`, `backend` and `supabase_schema.sql`.
 
-Example:
+Use the included Blueprint or set up a Python Web Service with:
 
-```powershell
-git init
-git add .
-git commit -m "CALIBR8 Render Supabase deployment"
-git branch -M main
-git remote add origin https://github.com/YOURNAME/calibr8-dashboard.git
-git push -u origin main
+| Setting       | Value                                                                                                |
+| ------------- | ---------------------------------------------------------------------------------------------------- |
+| Python        | 3.12.14                                                                                              |
+| Build command | `pip install --upgrade pip && pip install -r backend/requirements.txt`                               |
+| Start command | `uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips '*'` |
+| Health check  | `/api/health`                                                                                        |
+
+Environment variables:
+
+| Variable                    | Purpose                                                    |
+| --------------------------- | ---------------------------------------------------------- |
+| `SUPABASE_URL`              | Existing project URL                                       |
+| `SUPABASE_PUBLISHABLE_KEY`  | Publishable key; `SUPABASE_ANON_KEY` is also accepted      |
+| `CONNECTION_ENCRYPTION_KEY` | Encrypt saved customer API headers                         |
+| `INGEST_API_KEY`            | Additional key for device uploads; Blueprint generates one |
+| `ALLOW_DEMO`                | `true` to enable replay and public sample APIs             |
+| `OMP_NUM_THREADS`           | `1`                                                        |
+| `OPENBLAS_NUM_THREADS`      | `1`                                                        |
+| `MKL_NUM_THREADS`           | `1`                                                        |
+| `NUMEXPR_NUM_THREADS`       | `1`                                                        |
+
+The application does not require a service-role key. Frontend assets and API routes run on the same service, with no separate frontend build or hosting step.
+
+After deployment, sign in using the account created in Supabase, run the sample, and use **Workspace settings → Check connection**. If the database check fails, rerun the included SQL migration and confirm the environment variables.
+
+The first request to an idle service may take time to start. The UI provides request timeouts and retry instead of leaving playback in a running state after a failed request.
+
+## Local run
+
+Install `backend/requirements.txt`, fill `backend/.env`, then run:
+
+```sh
+uvicorn backend.app.main:app --env-file backend/.env --reload
 ```
 
-## Part D — Deploy on Render
-
-### Option 1: Blueprint (recommended)
-
-1. Sign in to Render.
-2. Click **New > Blueprint**.
-3. Connect your GitHub repository.
-4. Render reads `render.yaml`.
-5. Select the **Free** service plan if prompted.
-6. Enter these secret environment variables:
-
-```text
-SUPABASE_URL
-SUPABASE_ANON_KEY
-SUPABASE_SERVICE_ROLE_KEY
-CONNECTION_ENCRYPTION_KEY
-```
-
-`INGEST_API_KEY` is generated by the Blueprint automatically. You can replace it later with your own long random value.
-
-### Option 2: Manual Web Service
-
-Use:
-
-```text
-Runtime: Python
-Build command: pip install --upgrade pip && pip install -r backend/requirements.txt
-Start command: uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT
-Health check: /api/health
-```
-
-Add the same environment variables listed above.
-
-## Part E — Open the dashboard
-
-Render will provide a URL such as:
-
-```text
-https://calibr8-dashboard.onrender.com
-```
-
-Open it and sign in using the Supabase user you created.
-
-## Part F — Test before real API connection
-
-1. Click **Run sample replay** to start Route 1 without a connected fleet API.
-2. Alternatively, choose **Sample API replay**, select Route 1/2/3, then press **Start**.
-3. Click **View API output** to inspect the sample payload in **Models & physics**.
-4. Press **Inject harsh event**.
-5. Switch New CALIBR8-AI ↔ Friend GBM.
-
-Then switch to **Live fleet APIs**, add the real endpoint(s), Test, Refresh fleet, and select a vehicle.
-
-## Free-tier notes
-
-- Render Free services can spin down when idle. The first request after spin-down may take longer while the service wakes.
-- Supabase Free projects can pause after low activity. They can be resumed from the Supabase dashboard.
-- This is appropriate for prototypes, research, demonstrations, and progress reviews. A continuously available commercial deployment should use paid infrastructure later.
-
-## Troubleshooting
-
-### Render build fails on Python version
-The Blueprint pins `PYTHON_VERSION=3.11.11`. Keep Python 3.11 unless you have verified all model wheels on another version.
-
-### LightGBM/XGBoost memory pressure
-The Blueprint limits BLAS/OpenMP threads to 1. If the Free instance still runs out of memory, the next optimization is to separate inference from the dashboard or reduce loaded model dependencies.
-
-### Dashboard says Supabase configuration missing
-Check all three Render variables:
-
-```text
-SUPABASE_URL
-SUPABASE_ANON_KEY
-SUPABASE_SERVICE_ROLE_KEY
-```
-
-### Login works but realtime does not
-Measurements in v5.1 also update directly from API responses. The `/api/state` fallback restores history and supports push monitoring. To restore Realtime too, run `supabase_schema.sql` again and confirm `live_state`, `route_points`, `events`, and `fleet` are included in the `supabase_realtime` publication.
+Use `http://127.0.0.1:8000`. Cookie security uses the request's HTTPS scheme in deployment and supports HTTP localhost during development.

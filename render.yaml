@@ -5,27 +5,21 @@ services:
     plan: free
     autoDeploy: true
     buildCommand: pip install --upgrade pip && pip install -r backend/requirements.txt
-    startCommand: uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT
+    startCommand: uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips '*'
     healthCheckPath: /api/health
     envVars:
       - key: PYTHON_VERSION
-        value: 3.11.11
+        value: 3.12.14
       - key: SUPABASE_URL
         sync: false
-      - key: SUPABASE_ANON_KEY
+      - key: SUPABASE_PUBLISHABLE_KEY
         sync: false
-      - key: SUPABASE_SERVICE_ROLE_KEY
+      - key: CONNECTION_ENCRYPTION_KEY
         sync: false
       - key: INGEST_API_KEY
         generateValue: true
-      - key: CONNECTION_ENCRYPTION_KEY
-        sync: false
       - key: ALLOW_DEMO
         value: "true"
-      - key: ALLOW_UNAUTHENTICATED_DASHBOARD
-        value: "false"
-      - key: ALLOW_PRIVATE_API_HOSTS
-        value: "false"
       - key: OMP_NUM_THREADS
         value: "1"
       - key: OPENBLAS_NUM_THREADS

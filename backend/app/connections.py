@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import ipaddress
 import json
+import math
 import socket
 import time
 from datetime import datetime, timezone
@@ -136,7 +137,8 @@ def _num(v: Any, default: float | None = None) -> float | None:
     try:
         if v is None or v == "":
             return default
-        return float(v)
+        number = float(v)
+        return number if math.isfinite(number) else default
     except (TypeError, ValueError):
         return default
 
@@ -166,7 +168,9 @@ def normalize_record(record: dict[str, Any], connection: dict[str, Any]) -> dict
     lon = _num(_path_get(record, mapping["longitude"]))
     if device in (None, "") or lat is None or lon is None or not (-90 <= lat <= 90) or not (-180 <= lon <= 180):
         return None
-    speed = _num(_path_get(record, mapping["speed"]), 0.0) or 0.0
+    speed = _num(_path_get(record, mapping["speed"]))
+    if speed is None or speed < 0:
+        return None
     unit = connection.get("speed_unit", "kmh")
     if unit == "mph":
         speed *= 1.609344
@@ -174,14 +178,22 @@ def normalize_record(record: dict[str, Any], connection: dict[str, Any]) -> dict
         speed *= 3.6
     heading = _num(_path_get(record, mapping["direction"]))
     ts_raw = _path_get(record, mapping["timestamp"])
+    if ts_raw in (None, ""):
+        return None
     try:
         ts = _timestamp_seconds(ts_raw, connection.get("timestamp_format", "epoch_seconds"))
-    except Exception:
-        ts = time.time()
+    except (ValueError, TypeError, OverflowError):
+        return None
+    if not math.isfinite(ts) or speed > 500:
+        return None
+    try:
+        stamp = _iso_from_seconds(ts)
+    except (ValueError, OverflowError, OSError):
+        return None
     return {
         "external_vehicle_id": str(device),
         "timestamp_epoch": ts,
-        "timestamp": _iso_from_seconds(ts),
+        "timestamp": stamp,
         "lat": lat,
         "lon": lon,
         "speed_kmh": speed,
@@ -215,7 +227,7 @@ def telemetry_from_points(current: dict[str, Any], previous: dict[str, Any] | No
             prev_ts = float(prev.get("timestamp_epoch")) if prev.get("timestamp_epoch") is not None else datetime.fromisoformat(str(prev.get("timestamp")).replace("Z", "+00:00")).timestamp()
         except Exception:
             prev_ts = current["timestamp_epoch"] - 1.0
-        dt = max(0.25, min(30.0, current["timestamp_epoch"] - prev_ts))
+        dt = max(0.25, current["timestamp_epoch"] - prev_ts)
     else:
         dt = 1.0
     delta_mps = (post_speed - pre_speed) / 3.6

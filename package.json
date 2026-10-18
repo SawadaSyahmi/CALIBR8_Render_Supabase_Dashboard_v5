@@ -1,0 +1,13 @@
+{
+  "name": "calibr8-dashboard-rebuild",
+  "version": "7.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --experimental-vm-modules tests/frontend.cjs && node tests/database.cjs"
+  },
+  "devDependencies": {
+    "jsdom": "26.1.0",
+    "@electric-sql/pglite": "0.5.10"
+  }
+}

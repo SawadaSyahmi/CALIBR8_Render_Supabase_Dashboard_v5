@@ -1,11 +1,11 @@
 .env
 .env.*
 !.env.example
-__pycache__/
-*.pyc
+backend/.env
 .venv/
 venv/
-.DS_Store
-.pytest_cache/
-
 node_modules/
+__pycache__/
+*.py[cod]
+.DS_Store
+*.log
