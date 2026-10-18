@@ -1,0 +1,28 @@
+{
+  "name": "Sample GPS Fleet API",
+  "url": "https://YOUR-PROVIDER.example/api/positions",
+  "enabled": true,
+  "headers": {
+    "Authorization": "Bearer REPLACE_WITH_PROVIDER_TOKEN"
+  },
+  "root_path": null,
+  "field_mapping": {
+    "device_id": "deviceId",
+    "timestamp": "dateTime",
+    "latitude": "latitude",
+    "longitude": "longitude",
+    "speed": "speed",
+    "direction": "direction"
+  },
+  "timestamp_format": "epoch_seconds",
+  "speed_unit": "kmh",
+  "poll_interval_sec": 5,
+  "default_context": {
+    "vehicle_type": "passenger_car",
+    "road_type": "urban",
+    "traffic_density": "medium",
+    "weather": "clear",
+    "road_surface": "dry_asphalt",
+    "road_grade_ratio": 0.0
+  }
+}

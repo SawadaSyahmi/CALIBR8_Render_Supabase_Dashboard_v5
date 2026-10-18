@@ -1,0 +1,119 @@
+{
+  "raw_api_output": {
+    "deviceidint": 0,
+    "deviceId": "075034664531",
+    "dateTime": 1791167498,
+    "latitude": 1.4913033333333332,
+    "longitude": 103.76611333333334,
+    "altitude": 0,
+    "speed": 39.8,
+    "direction": "170.44",
+    "position": "A",
+    "status": "00000000",
+    "sign": "L",
+    "reserveSection": "00000000",
+    "tripId": 0,
+    "carstatus": 0,
+    "type": 0,
+    "isMigrated": false,
+    "driverName": "",
+    "driverID": "",
+    "fuelLevel": 0,
+    "useDeviceTripOdo": false,
+    "tripOdo": 0,
+    "AbnormalBehaviorType": 0,
+    "FatigueLevel": 0,
+    "sourceDateTime": 1783501819,
+    "replayScenario": "route_3",
+    "replayIndex": 15,
+    "replayCycle": 0,
+    "isReplay": true,
+    "harshBrakingEvent": {
+      "eventType": "HARSH_BRAKING",
+      "isHarshBraking": true,
+      "preSpeedKmh": 61.1,
+      "postSpeedKmh": 39.81,
+      "speedDropKmh": 21.29,
+      "peakDecelerationMps2": -6.5,
+      "meanDecelerationMps2": -4.55,
+      "maxJerkMps3": -13.0,
+      "durationSec": 1.3,
+      "reason": "Controlled replay injection for CALIBR8 dashboard/model validation"
+    }
+  },
+  "telemetry": {
+    "pre_event_speed_kmh": 61.1,
+    "post_event_speed_kmh": 39.806,
+    "speed_drop_kmh": 21.294,
+    "peak_deceleration_mps2": -6.5,
+    "mean_deceleration_mps2": -4.55,
+    "max_jerk_mps3": -13.0,
+    "event_duration_sec": 1.3,
+    "gps_quality": "high",
+    "sensor_quality": "high",
+    "timestamp_start": "2026-10-05T02:31:38.581656+00:00"
+  },
+  "gps": {
+    "lat": 1.4913033333333332,
+    "lon": 103.76611333333334,
+    "speed_kmh": 39.806,
+    "heading_deg": 170.44,
+    "timestamp": "2026-10-05T02:31:38.581656+00:00"
+  },
+  "context": {
+    "vehicle_type": "van_mpv",
+    "road_type": "arterial",
+    "traffic_density": "medium",
+    "weather": "cloudy",
+    "road_surface": "dry_asphalt",
+    "road_grade_ratio": 0.0
+  },
+  "physics": {
+    "mu_est": 0.8,
+    "road_angle_deg": 0.0,
+    "a_traction_mps2": 7.84532,
+    "a_capability_mps2": 6.969999999999999,
+    "a_available_mps2": 6.969999999999999,
+    "aero_drag_mps2": 0.07017281265344416,
+    "rolling_resistance_mps2": 0.142196425,
+    "observed_brake_component_mps2": 6.287630762346556,
+    "utilisation": 0.902099105071242,
+    "physics_label": "severe_braking",
+    "physics_harsh_or_severe": true,
+    "formulae": {
+      "traction": "a_traction = \u03bcg cos(\u03b8) + g sin(\u03b8)",
+      "drag": "a_drag = 0.5 \u03c1 CdA v\u00b2 / m",
+      "rolling": "a_roll = Crr g cos(\u03b8)",
+      "available": "a_available = min(a_traction, a_capability)",
+      "utilisation": "u = a_brake_observed / a_available"
+    }
+  },
+  "new_ai": {
+    "model": "CALIBR8-AI XGBoost+LightGBM",
+    "mode": "balanced",
+    "probability_harsh": 0.999243225210215,
+    "threshold": 0.46,
+    "harsh_or_severe": true,
+    "prediction": "harsh_or_severe",
+    "components": {
+      "xgboost_probability": 0.9994175434112549,
+      "lightgbm_probability": 0.998981747908655,
+      "xgboost_weight": 0.6,
+      "lightgbm_weight": 0.4
+    }
+  },
+  "friend_gbm": {
+    "model": "Friend GBM (HistGradientBoosting)",
+    "mode": "4-class argmax",
+    "probability_harsh": 0.9998184423651965,
+    "threshold": null,
+    "harsh_or_severe": true,
+    "prediction": "severe_braking",
+    "class_probabilities": {
+      "harsh_braking": 0.1304757629987899,
+      "mild_braking": 0.00011338117618451722,
+      "normal": 6.817645861900134e-05,
+      "severe_braking": 0.8693426793664065
+    }
+  }
+}

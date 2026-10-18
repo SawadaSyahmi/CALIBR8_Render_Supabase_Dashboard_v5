@@ -1,0 +1,27 @@
+[
+  {
+    "deviceidint": 0,
+    "deviceId": "075034653492",
+    "dateTime": 1791167393,
+    "latitude": 2.996436666666667,
+    "longitude": 101.60948833333332,
+    "speed": 5.6,
+    "direction": "180.51",
+    "position": "A",
+    "status": "00000000",
+    "sign": "L",
+    "reserveSection": "00000000",
+    "tripId": 0,
+    "carstatus": 0,
+    "type": 0,
+    "isMigrated": false,
+    "driverName": "",
+    "driverID": "",
+    "sourceDateTime": 1777536955,
+    "replayScenario": "route_1",
+    "replayIndex": 0,
+    "replayCycle": 0,
+    "isReplay": true,
+    "harshBrakingEvent": null
+  }
+]

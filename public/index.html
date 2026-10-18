@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>CALIBR8 Fleet Live Dashboard</title>
+<link rel="preconnect" href="https://unpkg.com">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+<link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+<div class="shell">
+  <header class="topbar">
+    <div>
+      <div class="eyebrow">FLEET VEHICLE SAFETY • CALIBR8 • RENDER + SUPABASE</div>
+      <h1>Fleet Monitoring Dashboard</h1>
+      <p>Connect multiple live fleet APIs, select any vehicle, and monitor its route, braking physics and switchable AI harsh-braking inference in one organization workspace.</p>
+    </div>
+    <div class="header-actions">
+      <div class="live-pill"><span class="pulse"></span><span id="liveText">CONNECTING</span></div>
+      <button id="manageApisBtn" class="button ghost">Manage APIs</button>
+      <button id="signOutBtn" class="button ghost">Sign out</button>
+      <button id="resetBtn" class="button ghost">Reset trip</button>
+      <button id="exportBtn" class="button">Export events CSV</button>
+    </div>
+  </header>
+
+  <section class="api-grid" aria-label="Live API status">
+    <div class="api-card"><div class="api-icon">01</div><div><strong>Telemetry API</strong><span id="telemetryStatus">Supabase…</span></div><em id="telemetryLatency">—</em></div>
+    <div class="api-card"><div class="api-icon">02</div><div><strong>GPS / Route API</strong><span id="gpsStatus">Supabase…</span></div><em id="gpsLatency">—</em></div>
+    <div class="api-card"><div class="api-icon">03</div><div><strong>Driving Context API</strong><span id="contextStatus">Supabase…</span></div><em id="contextLatency">—</em></div>
+    <div class="api-card"><div class="api-icon">04</div><div><strong>CALIBR8 Inference API</strong><span id="inferenceStatus">Render inference…</span></div><em id="inferenceLatency">render</em></div>
+  </section>
+
+  <section class="control-strip">
+    <div class="control-group model-control">
+      <label>Inference model</label>
+      <div class="segmented" role="group" aria-label="Choose model">
+        <button class="seg active" data-model="new_ai">New CALIBR8-AI</button>
+        <button class="seg" data-model="friend_gbm">Friend GBM</button>
+      </div>
+    </div>
+    <div class="control-group">
+      <label for="modeSelect">AI operating mode</label>
+      <select id="modeSelect"><option value="balanced">Balanced</option><option value="safety">Safety / high recall</option></select>
+    </div>
+    <div class="control-group">
+      <label for="sourceSelect">Live data source</label>
+      <select id="sourceSelect">
+        <option value="fleet_api">Live fleet APIs</option>
+        <option value="replay">Sample API replay</option>
+        <option value="harsh_replay">Replay + harsh event</option>
+        <option value="demo">Synthetic demo</option>
+        <option value="external">Legacy 3-API pull</option>
+        <option value="push">Device/API push to Supabase</option>
+      </select>
+    </div>
+    <div class="control-group hidden" id="fleetConnectionControl">
+      <label for="fleetConnectionSelect">API connection</label>
+      <select id="fleetConnectionSelect"><option value="all">All connections</option></select>
+    </div>
+    <div class="control-group hidden" id="fleetVehicleControl">
+      <label for="fleetVehicleSelect">Vehicle to monitor</label>
+      <select id="fleetVehicleSelect"><option value="">Refresh fleet first</option></select>
+    </div>
+    <div class="control-group" id="scenarioControl">
+      <label for="scenarioSelect">Replay route</label>
+      <select id="scenarioSelect">
+        <option value="route_1">Route 1 • 075034653492</option>
+        <option value="route_2">Route 2 • 075034655158</option>
+        <option value="route_3">Route 3 • 075034664531</option>
+      </select>
+    </div>
+    <div class="model-note" id="modelNote">XGBoost + LightGBM ensemble • balanced threshold</div>
+  </section>
+
+  <section class="fleet-panel hidden" id="fleetPanel">
+    <div class="section-head">
+      <div><div class="card-kicker">Fleet overview</div><h3>Vehicles discovered across all connected live APIs</h3></div>
+      <div class="fleet-actions"><span id="fleetSummary">0 APIs • 0 vehicles</span><button class="button ghost" id="refreshFleetBtn" type="button">↻ Refresh fleet</button></div>
+    </div>
+    <div class="fleet-grid" id="fleetGrid"><div class="empty-fleet">Add an API connection, then refresh the fleet.</div></div>
+  </section>
+
+  <section class="replay-control-bar" id="replayControls">
+    <div class="replay-control-status">
+      <div class="card-kicker">Replay controls</div>
+      <strong id="playbackStatus">Playing</strong>
+      <span id="nextTickText">Next point: calculating…</span>
+    </div>
+    <div class="replay-actions" role="group" aria-label="Replay playback controls">
+      <button type="button" class="button replay-btn" id="startReplayBtn">▶ Start</button>
+      <button type="button" class="button ghost replay-btn" id="pauseReplayBtn">⏸ Pause</button>
+      <button type="button" class="button ghost replay-btn" id="restartReplayBtn">↻ Restart</button>
+      <button type="button" class="button danger replay-btn" id="injectHarshBtn">⚠ Inject Harsh Event Now</button>
+    </div>
+    <div class="replay-settings">
+      <div class="control-group compact">
+        <label for="playbackSpeed">Playback speed</label>
+        <select id="playbackSpeed">
+          <option value="1">1× recorded time</option>
+          <option value="5" selected>5×</option>
+          <option value="10">10×</option>
+          <option value="30">30×</option>
+        </select>
+      </div>
+      <label class="gap-toggle" for="compressGaps"><input type="checkbox" id="compressGaps" checked> <span>Compress source gaps over 30 s</span></label>
+    </div>
+  </section>
+
+  <section class="hero-grid">
+    <article class="risk-card">
+      <div class="card-kicker">Current braking decision</div>
+      <div class="risk-main">
+        <div class="gauge-wrap">
+          <svg viewBox="0 0 220 130" class="gauge" aria-label="Harsh braking probability gauge">
+            <path d="M25 110 A85 85 0 0 1 195 110" class="gauge-bg" />
+            <path id="gaugeArc" d="M25 110 A85 85 0 0 1 195 110" class="gauge-value" pathLength="100" />
+          </svg>
+          <div class="gauge-text"><strong id="riskPct">0%</strong><span>harsh probability</span></div>
+        </div>
+        <div class="decision-panel">
+          <span id="decisionBadge" class="decision safe">NORMAL / MILD</span>
+          <h2 id="modelName">CALIBR8-AI</h2>
+          <p id="decisionText">Waiting for live input.</p>
+          <div class="compare-mini">
+            <div><span>New AI</span><strong id="newAiMini">—</strong></div>
+            <div><span>Friend GBM</span><strong id="friendMini">—</strong></div>
+            <div><span>Physics</span><strong id="physicsMini">—</strong></div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <article class="kpi-card">
+      <div class="card-kicker">Live vehicle state</div>
+      <div class="kpi-grid">
+        <div><span>Speed</span><strong><b id="speed">0</b> km/h</strong></div>
+        <div><span>Peak decel.</span><strong><b id="peak">0.00</b> m/s²</strong></div>
+        <div><span>Jerk</span><strong><b id="jerk">0.00</b> m/s³</strong></div>
+        <div><span>Physics utilisation</span><strong><b id="util">0</b>%</strong></div>
+        <div><span>Trip distance</span><strong><b id="distance">0.00</b> km</strong></div>
+        <div><span>Harsh events</span><strong><b id="harshCount">0</b></strong></div>
+      </div>
+    </article>
+  </section>
+
+  <section class="main-grid">
+    <article class="map-card">
+      <div class="section-head"><div><div class="card-kicker">Vehicle route</div><h3>Live driving path</h3></div><div class="legend"><span class="dot route-dot"></span>Route <span class="dot harsh-dot"></span>Harsh event</div></div>
+      <div id="map"></div>
+      <div class="map-footer"><span id="coords">GPS: —</span><span id="routeInfo">0 route points</span></div>
+    </article>
+
+    <article class="calculation-card">
+      <div class="section-head"><div><div class="card-kicker">Explainable physics</div><h3>CALIBR8 calculations</h3></div><span id="physicsLabel" class="small-badge">—</span></div>
+      <div class="calc-table">
+        <div><span>Estimated friction, μ</span><strong id="mu">—</strong></div>
+        <div><span>Road angle, θ</span><strong id="angle">—</strong></div>
+        <div><span>Traction limit</span><strong id="traction">—</strong></div>
+        <div><span>Brake capability</span><strong id="capability">—</strong></div>
+        <div><span>Available deceleration</span><strong id="available">—</strong></div>
+        <div><span>Observed brake component</span><strong id="brakeObs">—</strong></div>
+      </div>
+      <div class="equation-box">
+        <div><code>a<sub>traction</sub> = μg cos(θ) + g sin(θ)</code></div>
+        <div><code>a<sub>available</sub> = min(a<sub>traction</sub>, a<sub>capability</sub>)</code></div>
+        <div><code>u = a<sub>brake,observed</sub> / a<sub>available</sub></code></div>
+        <div class="band-row"><span>&lt;40% normal</span><span>40–60% mild</span><span>60–80% harsh</span><span>≥80% severe</span></div>
+      </div>
+    </article>
+  </section>
+
+  <section class="chart-grid">
+    <article class="chart-card"><div class="section-head"><div><div class="card-kicker">Telemetry trend</div><h3>Speed & braking</h3></div><span>latest 60 samples</span></div><canvas id="telemetryChart"></canvas></article>
+    <article class="context-card">
+      <div class="section-head"><div><div class="card-kicker">Current context</div><h3>Driving conditions</h3></div><span id="qualityBadge" class="small-badge">quality —</span></div>
+      <div class="context-grid">
+        <div><span>Vehicle</span><strong id="vehicle">—</strong></div><div><span>Road</span><strong id="road">—</strong></div>
+        <div><span>Traffic</span><strong id="traffic">—</strong></div><div><span>Weather</span><strong id="weather">—</strong></div>
+        <div><span>Surface</span><strong id="surface">—</strong></div><div><span>Road grade</span><strong id="grade">—</strong></div>
+      </div>
+      <div class="submodel" id="submodelInfo"></div>
+    </article>
+  </section>
+
+
+  <section class="replay-grid">
+    <article class="api-output-card">
+      <div class="section-head"><div><div class="card-kicker">Live source payload</div><h3>Current API output</h3></div><span id="replayBadge" class="small-badge">waiting</span></div>
+      <div class="replay-meta">
+        <div><span>Device</span><strong id="replayDevice">—</strong></div>
+        <div><span>Point</span><strong id="replayPoint">—</strong></div>
+        <div><span>Source Δt</span><strong id="replayDelta">—</strong></div>
+        <div><span>Derived accel.</span><strong id="replayAccel">—</strong></div>
+      </div>
+      <pre id="apiOutput" class="json-output">Waiting for replay data…</pre>
+    </article>
+    <article class="harsh-output-card" id="harshOutputCard">
+      <div class="section-head"><div><div class="card-kicker">Injected test event</div><h3>Harsh-braking output</h3></div><span id="harshReplayBadge" class="small-badge">not active</span></div>
+      <div id="harshOutput" class="harsh-output-empty">Choose “Replay + harsh event”. The route will play normally and inject one controlled harsh-braking event each cycle.</div>
+    </article>
+  </section>
+
+  <section class="events-card">
+    <div class="section-head"><div><div class="card-kicker">Safety log</div><h3>Detected harsh-braking events</h3></div><span>Most recent first</span></div>
+    <div class="table-wrap"><table><thead><tr><th>Time</th><th>Model</th><th>Probability</th><th>Speed</th><th>Peak decel.</th><th>Physics</th><th>Location</th></tr></thead><tbody id="eventRows"><tr><td colspan="7" class="empty">No harsh-braking events yet.</td></tr></tbody></table></div>
+  </section>
+
+  <footer><span>CALIBR8 Multi-Fleet Dashboard • <b id="authStatus">auth…</b> • <b id="firestoreStatus">Supabase…</b></span><span id="updatedAt">Waiting for data…</span></footer>
+</div>
+
+<div class="modal-backdrop hidden" id="apiManager">
+  <section class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="apiManagerTitle">
+    <div class="section-head"><div><div class="card-kicker">Customer configuration</div><h3 id="apiManagerTitle">API Connections</h3></div><button class="button ghost" id="closeApiManagerBtn" type="button">Close</button></div>
+    <p class="manager-help">Add as many fleet APIs as needed. CALIBR8 discovers vehicle IDs from each response and lets you choose one vehicle to monitor. Saved request headers are encrypted on the backend and are never shown again.</p>
+    <div id="connectionsList" class="connections-list"></div>
+    <form id="connectionForm" class="connection-form">
+      <input type="hidden" id="connectionId">
+      <div class="form-grid">
+        <label><span>Connection name</span><input id="connectionName" required maxlength="80" placeholder="Fleet API - Klang"></label>
+        <label class="span-2"><span>API URL</span><input id="connectionUrl" required type="url" placeholder="https://provider.example.com/api/vehicles"></label>
+        <label class="span-2"><span>Request headers JSON <small>(optional; blank keeps saved headers when editing)</small></span><textarea id="connectionHeaders" rows="3" placeholder='{"Authorization":"Bearer ..."}'></textarea></label>
+      </div>
+      <details>
+        <summary>Field mapping & API format</summary>
+        <div class="form-grid details-grid">
+          <label><span>Root path</span><input id="rootPath" placeholder="data.items (blank = root)"></label>
+          <label><span>Device ID field</span><input id="mapDevice" value="deviceId"></label>
+          <label><span>Timestamp field</span><input id="mapTimestamp" value="dateTime"></label>
+          <label><span>Latitude field</span><input id="mapLat" value="latitude"></label>
+          <label><span>Longitude field</span><input id="mapLon" value="longitude"></label>
+          <label><span>Speed field</span><input id="mapSpeed" value="speed"></label>
+          <label><span>Direction field</span><input id="mapDirection" value="direction"></label>
+          <label><span>Timestamp format</span><select id="timestampFormat"><option value="epoch_seconds">Unix seconds</option><option value="epoch_milliseconds">Unix milliseconds</option><option value="iso">ISO date/time</option></select></label>
+          <label><span>Speed unit</span><select id="speedUnit"><option value="kmh">km/h</option><option value="mph">mph</option><option value="mps">m/s</option></select></label>
+          <label><span>Poll interval</span><select id="pollInterval"><option value="2">2 s</option><option value="5" selected>5 s</option><option value="10">10 s</option><option value="30">30 s</option><option value="60">60 s</option></select></label>
+        </div>
+      </details>
+      <details>
+        <summary>Default vehicle & driving context</summary>
+        <div class="form-grid details-grid">
+          <label><span>Vehicle type</span><select id="ctxVehicle"><option value="passenger_car">Passenger car</option><option value="van_mpv">Van / MPV</option><option value="pickup_4x4">Pickup 4x4</option><option value="small_lorry">Small lorry</option><option value="heavy_lorry">Heavy lorry</option><option value="bus">Bus</option></select></label>
+          <label><span>Road type</span><select id="ctxRoad"><option value="urban">Urban</option><option value="residential">Residential</option><option value="arterial">Arterial</option><option value="highway">Highway</option><option value="rural">Rural</option><option value="industrial">Industrial</option></select></label>
+          <label><span>Traffic</span><select id="ctxTraffic"><option value="medium">Medium</option><option value="low">Low</option><option value="high">High</option><option value="stop_go">Stop & go</option></select></label>
+          <label><span>Weather</span><select id="ctxWeather"><option value="clear">Clear</option><option value="cloudy">Cloudy</option><option value="light_rain">Light rain</option><option value="heavy_rain">Heavy rain</option><option value="fog">Fog</option></select></label>
+          <label><span>Road surface</span><select id="ctxSurface"><option value="dry_asphalt">Dry asphalt</option><option value="wet_asphalt">Wet asphalt</option><option value="rough_asphalt">Rough asphalt</option><option value="gravel">Gravel</option><option value="pothole_rough">Pothole / rough</option><option value="painted_marking">Painted marking</option></select></label>
+          <label><span>Road grade (%)</span><input id="ctxGrade" type="number" step="0.1" min="-20" max="20" value="0"></label>
+        </div>
+      </details>
+      <div class="form-actions"><label class="enabled-check"><input id="connectionEnabled" type="checkbox" checked> Enabled</label><button type="button" class="button ghost" id="clearConnectionFormBtn">Clear</button><button type="submit" class="button">Save API connection</button></div>
+      <div id="connectionFormStatus" class="form-status"></div>
+    </form>
+  </section>
+</div>
+
+<div class="auth-gate" id="authGate">
+  <form class="auth-card" id="authForm">
+    <div class="eyebrow">CALIBR8 ORGANIZATION ACCESS</div>
+    <h2>Sign in to your fleet workspace</h2>
+    <p>Authorized users share the same organization fleet, API connections, routes and safety events.</p>
+    <label><span>Email</span><input id="authEmail" type="email" autocomplete="email" required></label>
+    <label><span>Password</span><input id="authPassword" type="password" minlength="6" autocomplete="current-password" required></label>
+    <div class="auth-actions"><button class="button" type="submit">Sign in</button><button class="button ghost hidden" type="button" id="createAccountBtn">Create account</button></div>
+    <button class="auth-demo hidden" type="button" id="anonymousBtn">Use anonymous demo workspace</button>
+    <div id="authMessage" class="form-status"></div>
+  </form>
+</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script type="module" src="/app.js"></script>
+</body>
+</html>

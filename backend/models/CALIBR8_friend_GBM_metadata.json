@@ -1,0 +1,76 @@
+{
+  "numeric_features": [
+    "pre_event_speed_kmh",
+    "post_event_speed_kmh",
+    "speed_drop_kmh",
+    "peak_deceleration_mps2",
+    "mean_deceleration_mps2",
+    "max_jerk_mps3",
+    "event_duration_sec"
+  ],
+  "categorical_features": [
+    "vehicle_type",
+    "road_type",
+    "traffic_density",
+    "weather",
+    "road_surface",
+    "gps_quality",
+    "sensor_quality"
+  ],
+  "category_levels": {
+    "vehicle_type": [
+      "passenger_car",
+      "van_mpv",
+      "pickup_4x4",
+      "small_lorry",
+      "heavy_lorry",
+      "bus"
+    ],
+    "road_type": [
+      "residential",
+      "urban",
+      "arterial",
+      "highway",
+      "rural",
+      "industrial"
+    ],
+    "traffic_density": [
+      "low",
+      "medium",
+      "high",
+      "stop_go"
+    ],
+    "weather": [
+      "clear",
+      "cloudy",
+      "light_rain",
+      "heavy_rain",
+      "fog"
+    ],
+    "road_surface": [
+      "dry_asphalt",
+      "wet_asphalt",
+      "rough_asphalt",
+      "gravel",
+      "pothole_rough",
+      "painted_marking"
+    ],
+    "gps_quality": [
+      "high",
+      "medium",
+      "low"
+    ],
+    "sensor_quality": [
+      "high",
+      "medium",
+      "low"
+    ]
+  },
+  "classes": [
+    "harsh_braking",
+    "mild_braking",
+    "normal",
+    "severe_braking"
+  ],
+  "source": "Friend original CALIBR8_validation.py logic; retrained on CALIBR8 v3 100k synthetic dataset for dashboard comparison"
+}

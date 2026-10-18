@@ -1,0 +1,55 @@
+{
+  "telemetry": {
+    "pre_event_speed_kmh": 61.1,
+    "post_event_speed_kmh": 39.806,
+    "speed_drop_kmh": 21.294,
+    "peak_deceleration_mps2": -6.5,
+    "mean_deceleration_mps2": -4.55,
+    "max_jerk_mps3": -13.0,
+    "event_duration_sec": 1.3,
+    "gps_quality": "high",
+    "sensor_quality": "high",
+    "timestamp_start": "2026-10-05T02:29:53.680093+00:00"
+  },
+  "gps": {
+    "lat": 1.4913033333333332,
+    "lon": 103.76611333333334,
+    "speed_kmh": 39.806,
+    "heading_deg": 170.44,
+    "timestamp": "2026-10-05T02:29:53.680093+00:00"
+  },
+  "context": {
+    "vehicle_type": "van_mpv",
+    "road_type": "arterial",
+    "traffic_density": "medium",
+    "weather": "cloudy",
+    "road_surface": "dry_asphalt",
+    "road_grade_ratio": 0.0
+  },
+  "replay": {
+    "scenario": "route_3",
+    "scenarioName": "Sample Route 3",
+    "deviceId": "075034664531",
+    "step": 15,
+    "index": 15,
+    "cycle": 0,
+    "totalPoints": 109,
+    "sourceDateTime": 1783501819,
+    "sourceDeltaSec": 10.0,
+    "derivedLongitudinalAccelMps2": 0.0167,
+    "harshInjectionIndex": 15,
+    "harshInjected": true
+  },
+  "harsh_event": {
+    "eventType": "HARSH_BRAKING",
+    "isHarshBraking": true,
+    "preSpeedKmh": 61.1,
+    "postSpeedKmh": 39.81,
+    "speedDropKmh": 21.29,
+    "peakDecelerationMps2": -6.5,
+    "meanDecelerationMps2": -4.55,
+    "maxJerkMps3": -13.0,
+    "durationSec": 1.3,
+    "reason": "Controlled replay injection for CALIBR8 dashboard/model validation"
+  }
+}
